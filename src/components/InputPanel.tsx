@@ -7,6 +7,7 @@ import ResponseControl from './ResponseControl';
 const InputPanel: React.FC = () => {
   const [isAssistantResponding, setIsAssistantResponding] = useState(false);
   const [text, setText] = useState('');
+  const [isMicMuted, setIsMicMuted] = useState(true);
 
   const handleStopGenerating = () => {
     // Implement stopping the assistant's response generation
@@ -38,6 +39,10 @@ const InputPanel: React.FC = () => {
     }
   };
 
+  const handleMicToggle = () => {
+    setIsMicMuted(!isMicMuted);
+  };
+
   return (
     <Box
       p={1}
@@ -65,8 +70,10 @@ const InputPanel: React.FC = () => {
               backgroundColor: 'grey.300',
             }}
           >
-            <IconButton color="primary" sx={{position: 'absolute', left: 4, bottom: 8}}>
-              <MicNoneIcon/>
+            <IconButton color="primary"
+                        sx={{position: 'absolute', left: 4, bottom: 8}}
+                        onClick={handleMicToggle}>
+              <MicNoneIcon color={isMicMuted ? 'disabled' : 'primary'}/>
             </IconButton>
             <TextareaAutosize
               minRows={1}
