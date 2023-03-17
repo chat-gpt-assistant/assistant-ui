@@ -5,11 +5,13 @@ import InputPanel from './InputPanel';
 
 const MainContent: React.FC = () => {
   return (
-    <Box display="flex" flexDirection="column" height="100vh">
-      <Box flexGrow={1} bgcolor="grey.200" overflow="hidden">
+    <Box display="flex" flexDirection="column" height="100vh" bgcolor="grey.200">
+      <Box flexGrow={1} overflow="hidden">
         <ConversationHistory/>
       </Box>
-      <Box p={1} alignSelf="center" width="100%" maxWidth="md">
+      <Box display="flex" justifyContent="center" width="100%" sx={{
+        background: 'linear-gradient(rgba(244, 244, 244, 0), rgba(244, 244, 244, 1))',
+      }}>
         <InputPanel/>
       </Box>
     </Box>
