@@ -25,6 +25,7 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
+  const [hovered, setHovered] = useState(false);
   const isUser = sender === 'user';
   const avatarPlaceholder = isUser ? 'U' : 'A';
 
@@ -82,7 +83,9 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
   );
 
   return (
-    <Box display="flex" justifyContent="center">
+    <Box display="flex" justifyContent="center"
+         onMouseOver={(e) => setHovered(true)}
+         onMouseLeave={(e) => setHovered(false)}>
       <Box
         display="flex"
         alignItems="flex-start"
@@ -96,7 +99,7 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
              maxWidth="md"
              position="relative"
         >
-          {!isEditing && isUser && versionControl && (
+          {!isEditing && isUser && versionControl && hovered && (
             <Box style={{position: 'absolute', top: 0, left: isLgScreen ? -80 : 10 }}>
               <MessageVersionControl
                 onPreviousVersion={versionControl.onPreviousVersion}
@@ -111,7 +114,7 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
 
           {isEditing ? editContent : messageContent}
 
-          {(onEdit && isUser && !isEditing) && (
+          {(onEdit && isUser && !isEditing && hovered) && (
             <IconButton
               onClick={() => setIsEditing(!isEditing)}
               size="small"
