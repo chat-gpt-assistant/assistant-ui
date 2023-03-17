@@ -27,7 +27,7 @@ const ResponseControl: React.FC<ResponseControlProps> = ({
 
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-      <Button variant="outlined" color="primary" onClick={handleClick} startIcon={buttonIcon}>
+      <Button variant="contained" color="primary" onClick={handleClick} startIcon={buttonIcon}>
         {buttonText}
       </Button>
     </Box>

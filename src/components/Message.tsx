@@ -107,7 +107,7 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
             </Box>
           )}
 
-          <Avatar>{avatarPlaceholder}</Avatar>
+          <Avatar variant="square">{avatarPlaceholder}</Avatar>
 
           {isEditing ? editContent : messageContent}
 

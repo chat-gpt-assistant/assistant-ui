@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import Message, { MessageProps } from './Message';
 
 interface ExtendedMessageProps extends MessageProps {
@@ -8,6 +8,7 @@ interface ExtendedMessageProps extends MessageProps {
 }
 
 const ConversationHistory: React.FC = () => {
+  const theme = useTheme();
   const [messages, setMessages] = useState<ExtendedMessageProps[]>([
     {
       sender: 'user',
@@ -63,7 +64,7 @@ const ConversationHistory: React.FC = () => {
       currentVersionIndex: 0, // index of the current version
     },
     {
-      sender: 'assistant',
+      sender: 'user',
       text: 'um et malesuada fames ac ante ipsum primis in faucibus. Maecenas suscipit risus elit, ut aliquet metus viverra at. Maecenas commodo, mi ac volutpat dictum, mi orci bibendum enim, nec suscipit ex lacus non lorem. Proin accumsan lectus in nulla semper tempor. Quisque sit amet dolor suscipit, consequat dolor sit amet, volutpat magna. Donec gravida sapien sapien. Pellentesque vulputate elementum viverra.', // original text
       versions: ['1', '2'], // array containing the original text
       currentVersionIndex: 0, // index of the current version
@@ -75,7 +76,7 @@ const ConversationHistory: React.FC = () => {
       currentVersionIndex: 0, // index of the current version
     },
     {
-      sender: 'assistant',
+      sender: 'user',
       text: 'um et malesuada fames ac ante ipsum primis in faucibus. Maecenas suscipit risus elit, ut aliquet metus viverra at. Maecenas commodo, mi ac volutpat dictum, mi orci bibendum enim, nec suscipit ex lacus non lorem. Proin accumsan lectus in nulla semper tempor. Quisque sit amet dolor suscipit, consequat dolor sit amet, volutpat magna. Donec gravida sapien sapien. Pellentesque vulputate elementum viverra.', // original text
       versions: ['1', '2'], // array containing the original text
       currentVersionIndex: 0, // index of the current version
@@ -87,7 +88,7 @@ const ConversationHistory: React.FC = () => {
       currentVersionIndex: 0, // index of the current version
     },
     {
-      sender: 'assistant',
+      sender: 'user',
       text: 'um et malesuada fames ac ante ipsum primis in faucibus. Maecenas suscipit risus elit, ut aliquet metus viverra at. Maecenas commodo, mi ac volutpat dictum, mi orci bibendum enim, nec suscipit ex lacus non lorem. Proin accumsan lectus in nulla semper tempor. Quisque sit amet dolor suscipit, consequat dolor sit amet, volutpat magna. Donec gravida sapien sapien. Pellentesque vulputate elementum viverra.', // original text
       versions: ['1', '2'], // array containing the original text
       currentVersionIndex: 0, // index of the current version
@@ -130,6 +131,8 @@ const ConversationHistory: React.FC = () => {
       height="100%"
       width="100%"
       overflow="auto"
+      paddingBottom={20}
+      bgcolor="grey.300"
     >
       <Typography variant="h6" m={1}>
         Conversation History
