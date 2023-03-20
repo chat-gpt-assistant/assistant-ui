@@ -1,19 +1,40 @@
-import React from 'react';
-import { Box, Button, Divider } from '@mui/material';
+import React, { useEffect } from 'react';
+import { Alert, Box, Button, CircularProgress, Divider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ChatItem from './ChatItem';
 import DeleteIcon from "@mui/icons-material/Delete";
+import { fetchChats } from '../features/chat/chatSlice';
+import { RootState } from '../app/store';
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+
 
 const SidePanel: React.FC = () => {
+  const dispatch = useAppDispatch();
+  const chats = useAppSelector((state: RootState) => state.chat.chats);
+  const status = useAppSelector((state: RootState) => state.chat.status);
 
-  const chatItems = Array.from({length: 3}, (_, i) => (
-    <ChatItem
-      key={i}
-      title={`Conversation ${i + 1}`}
-      onEdit={() => console.log(`Edit Conversation ${i + 1}`)}
-      onDelete={() => console.log(`Delete Conversation ${i + 1}`)}
-    />
-  ));
+  useEffect(() => {
+    if (status === 'idle') {
+      dispatch(fetchChats());
+    }
+  }, [status, dispatch]);
+
+  const chatItems = status === 'loading' ? (
+    <Box display="flex" justifyContent="center">
+      <CircularProgress/>
+    </Box>
+  ) : status === 'failed' ? (
+    <Alert severity="error">Error loading chats.</Alert>
+  ) : (
+    chats.map((chat) => (
+      <ChatItem
+        key={chat.id}
+        title={chat.title}
+        onEdit={() => console.log(`Edit ${chat.title}`)}
+        onDelete={() => console.log(`Delete ${chat.title}`)}
+      />
+    ))
+  );
 
   return (
     <Box display="flex" flexDirection="column" height="100vh" p={1} bgcolor="grey.200">

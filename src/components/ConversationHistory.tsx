@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, useTheme } from '@mui/material';
 import Message, { MessageProps } from './Message';
+import { useParams } from "react-router-dom";
 
 interface ExtendedMessageProps extends MessageProps {
   versions: string[];
@@ -9,6 +10,8 @@ interface ExtendedMessageProps extends MessageProps {
 
 const ConversationHistory: React.FC = () => {
   const theme = useTheme();
+  const { id } = useParams();
+
   const [messages, setMessages] = useState<ExtendedMessageProps[]>([
 
   ]);
