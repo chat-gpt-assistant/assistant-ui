@@ -75,6 +75,7 @@ const InputPanel: React.FC = () => {
                         onClick={handleMicToggle}>
               <MicNoneIcon color={isMicMuted ? 'disabled' : 'primary'}/>
             </IconButton>
+
             <TextareaAutosize
               minRows={1}
               maxRows={8}

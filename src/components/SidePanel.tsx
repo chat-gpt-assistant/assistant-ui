@@ -7,7 +7,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 
 const SidePanel: React.FC = () => {
 
-  const chatItems = Array.from({length: 50}, (_, i) => (
+  const chatItems = Array.from({length: 3}, (_, i) => (
     <ChatItem
       key={i}
       title={`Conversation ${i + 1}`}
@@ -27,6 +27,7 @@ const SidePanel: React.FC = () => {
       <Box flexGrow={1} overflow="auto" mb={1}>
         {chatItems}
       </Box>
+
       <Divider/>
       <Box width="100%" display="flex" flexDirection="column" gap={1} mt={1}>
         <Button variant="outlined" color="secondary" startIcon={<DeleteSweepIcon/>}>
