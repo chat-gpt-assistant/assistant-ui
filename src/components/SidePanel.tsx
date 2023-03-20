@@ -2,8 +2,7 @@ import React from 'react';
 import { Box, Button, Divider } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ChatItem from './ChatItem';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import SettingsIcon from '@mui/icons-material/Settings';
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const SidePanel: React.FC = () => {
 
@@ -30,12 +29,12 @@ const SidePanel: React.FC = () => {
 
       <Divider/>
       <Box width="100%" display="flex" flexDirection="column" gap={1} mt={1}>
-        <Button variant="outlined" color="secondary" startIcon={<DeleteSweepIcon/>}>
+        <Button variant="outlined" color="secondary" startIcon={<DeleteIcon/>}>
           Clear Conversations
         </Button>
-        <Button variant="outlined" color="secondary" startIcon={<SettingsIcon/>}>
-          Settings
-        </Button>
+        {/*<Button variant="outlined" color="secondary" startIcon={<SettingsIcon/>}>*/}
+        {/*  Settings*/}
+        {/*</Button>*/}
       </Box>
     </Box>
   );

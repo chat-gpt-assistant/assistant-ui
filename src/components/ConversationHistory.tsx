@@ -10,18 +10,7 @@ interface ExtendedMessageProps extends MessageProps {
 const ConversationHistory: React.FC = () => {
   const theme = useTheme();
   const [messages, setMessages] = useState<ExtendedMessageProps[]>([
-    {
-      sender: 'user',
-      text: 'um et malesuada fames ac ante ipsum primis in faucibus. Maecenas suscipit risus elit, ut aliquet metus viverra at. Maecenas commodo, mi ac volutpat dictum, mi orci bibendum enim, nec suscipit ex lacus non lorem. Proin accumsan lectus in nulla semper tempor. Quisque sit amet dolor suscipit, consequat dolor sit amet, volutpat magna. Donec gravida sapien sapien. Pellentesque vulputate elementum viverra.', // original text
-      versions: ['1', '2'], // array containing the original text
-      currentVersionIndex: 1, // index of the current version
-    },
-    {
-      sender: 'assistant',
-      text: 'um et malesuada fames ac ante ipsum primis in faucibus. Maecenas suscipit risus elit, ut aliquet metus viverra at. Maecenas commodo, mi ac volutpat dictum, mi orci bibendum enim, nec suscipit ex lacus non lorem. Proin accumsan lectus in nulla semper tempor. Quisque sit amet dolor suscipit, consequat dolor sit amet, volutpat magna. Donec gravida sapien sapien. Pellentesque vulputate elementum viverra.', // original text
-      versions: ['1', '2'], // array containing the original text
-      currentVersionIndex: 0, // index of the current version
-    },
+
   ]);
 
   const handleEditMessage = (index: number, newText: string) => {
