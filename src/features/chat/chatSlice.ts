@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Chat, ChatNode } from "../../models";
+import { Chat } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatState {
   chats: { [id: string]: Chat };
@@ -57,6 +58,22 @@ export const updateChatTitle = createAsyncThunk(
   }
 );
 
+export const createChat = createAsyncThunk(
+  'chat/createChat',
+  async () => {
+    const newChat: Chat = {
+      id: uuidv4(),
+      title: 'New Chat',
+      createTime: new Date(), // TODO: server should not care about this and text fields
+      currentNode: '',
+      mapping: {},
+    };
+
+    await axios.post('/chats', newChat);
+    return newChat;
+  }
+);
+
 export const chatSlice = createSlice({
   name: 'chat',
   initialState,
@@ -96,7 +113,11 @@ export const chatSlice = createSlice({
         if (state.chats[chatId]) {
           state.chats[chatId].title = newTitle;
         }
-      });
+      })
+      .addCase(createChat.fulfilled, (state, action) => {
+        const newChat = action.payload;
+        state.chats[newChat.id] = newChat;
+      })
   }
 });
 

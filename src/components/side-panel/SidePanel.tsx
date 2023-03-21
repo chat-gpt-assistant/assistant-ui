@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ChatItem from './ChatItem';
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
+  createChat,
   deleteAllChats,
   deleteChat,
   fetchChats,
@@ -27,6 +28,10 @@ const SidePanel: React.FC = () => {
 
   const handleDeleteAllChats = () => {
     dispatch(deleteAllChats());
+  };
+
+  const handleNewChat = async () => {
+    await dispatch(createChat());
   };
 
   useEffect(() => {
@@ -56,7 +61,7 @@ const SidePanel: React.FC = () => {
   return (
     <Box display="flex" flexDirection="column" height="100vh" p={1} bgcolor="grey.200">
       <Box mb={1}>
-        <Button fullWidth startIcon={<AddIcon/>} variant="contained">
+        <Button fullWidth startIcon={<AddIcon/>} variant="contained" onClick={handleNewChat}>
           New Chat
         </Button>
       </Box>
