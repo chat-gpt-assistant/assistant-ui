@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, FormControl, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
 import MessageIcon from '@mui/icons-material/Message';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,11 +10,12 @@ import { Link } from "react-router-dom";
 interface ChatItemProps {
   id: string;
   title: string;
+  active?: boolean;
   onEdit: (newTitle: string) => void;
   onDelete: () => void;
 }
 
-const ChatItem: React.FC<ChatItemProps> = ({id, title, onEdit, onDelete}) => {
+const ChatItem: React.FC<ChatItemProps> = ({id, title, active, onEdit, onDelete}) => {
   const [hovered, setHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
@@ -40,7 +41,17 @@ const ChatItem: React.FC<ChatItemProps> = ({id, title, onEdit, onDelete}) => {
 
 
   return (
-    <Box display="flex" alignItems="center" gap={1} p={1} width="100%"
+    <Box display="flex"
+         alignItems="center"
+         gap={1}
+         p={1}
+         width="100%"
+         sx={{
+           borderWidth: active ? 1 : 0,
+           borderRadius: 1,
+           borderStyle: 'solid',
+           borderColor: active ? "primary.light" : "transparent",
+         }}
          onMouseOver={(e) => setHovered(true)}
          onMouseLeave={(e) => setHovered(false)}>
       <MessageIcon/>
@@ -85,7 +96,10 @@ const ChatItem: React.FC<ChatItemProps> = ({id, title, onEdit, onDelete}) => {
                     flexGrow={1}
                     component={Link}
                     to={`/chat/${id}`}
-                    sx={{textDecoration: 'none', color: 'inherit'}}
+                    sx={{
+                      textDecoration: 'none',
+                      color: "inherit",
+                    }}
         >
           {title}
         </Typography>
