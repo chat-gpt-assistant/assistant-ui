@@ -15,6 +15,10 @@ const MessageVersionControl: React.FC<MessageVersionControlProps> = ({
                                                                        onPreviousVersion,
                                                                        onNextVersion,
                                                                      }) => {
+  if (totalVersions === 1) {
+    return null;
+  }
+
   const handlePreviousVersionClick = (event: React.MouseEvent) => {
     event.preventDefault();
     onPreviousVersion();
@@ -30,6 +34,7 @@ const MessageVersionControl: React.FC<MessageVersionControlProps> = ({
       <MuiLink
         component={RouterLink}
         to="#"
+        // to={{ pathname: '', search: `?version=${currentVersion - 1}` }}
         onClick={handlePreviousVersionClick}
         sx={{
           color: currentVersion === 1 ? 'rgba(0, 0, 0, 0.26)' : 'inherit',
@@ -46,6 +51,7 @@ const MessageVersionControl: React.FC<MessageVersionControlProps> = ({
       <MuiLink
         component={RouterLink}
         to="#"
+        // to={{ pathname: '', search: `?version=${currentVersion + 1}` }}
         onClick={handleNextVersionClick}
         sx={{
           color: currentVersion === totalVersions ? 'rgba(0, 0, 0, 0.26)' : 'inherit',

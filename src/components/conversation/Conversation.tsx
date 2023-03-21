@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Box } from '@mui/material';
 import ConversationHistory from './ConversationHistory';
 import InputPanel from './InputPanel';
 import { useParams } from "react-router-dom";
-import { Message } from "../../models";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchChatById, selectSelectedChatStatus } from "../../features/chat/chatSlice";
+import {
+  fetchChatById,
+  resetSelectedChatStatus,
+  selectSelectedChat,
+  selectSelectedChatStatus
+} from "../../features/chat/chatSlice";
 
 const Conversation: React.FC = () => {
   const { id } = useParams();
 
   const dispatch = useAppDispatch();
   const selectedChatStatus = useAppSelector(selectSelectedChatStatus);
+  const selectedChat = useAppSelector(selectSelectedChat);
+
+  useEffect(() => {
+    dispatch(resetSelectedChatStatus());
+  }, [id, dispatch]);
 
   useEffect(() => {
     if (id && selectedChatStatus === 'idle') {
@@ -19,12 +28,8 @@ const Conversation: React.FC = () => {
     }
   }, [selectedChatStatus, dispatch, id]);
 
-  const [messages, setMessages] = useState<Message[]>([
-
-  ]);
-
-  const conversationHistory = id ? (
-    <ConversationHistory chatId={id} messages={messages}/>
+  const conversationHistory = id && selectedChat ? (
+    <ConversationHistory chat={selectedChat}/>
   ) : (
     <Alert severity="info">
       Please select a chat from the side panel.
@@ -36,6 +41,7 @@ const Conversation: React.FC = () => {
       <Box flexGrow={1} overflow="auto">
         {conversationHistory}
       </Box>
+
       <Box display="flex" justifyContent="center" width="100%" sx={{
         position: 'absolute',
         bottom: 0,

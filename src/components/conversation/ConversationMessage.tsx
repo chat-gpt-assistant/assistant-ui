@@ -11,15 +11,17 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import MessageVersionControl, { MessageVersionControlProps } from './MessageVersionControl';
+import gptLogo from '../../logo.svg';
 
 export interface MessageProps {
+  id: string;
   sender: 'user' | 'assistant';
   text: string;
   onEdit?: (newText: string) => void;
   versionControl?: MessageVersionControlProps;
 }
 
-const ConversationMessage: React.FC<MessageProps> = ({sender, text, onEdit, versionControl}) => {
+const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, versionControl}) => {
   const theme = useTheme();
   const isLgScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
@@ -39,12 +41,26 @@ const ConversationMessage: React.FC<MessageProps> = ({sender, text, onEdit, vers
     setIsEditing(false);
   };
 
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleSave();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      handleCancel();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
   const messageContent = (
     <Typography
       variant="body1"
-      component="div"
+      width="100%"
+      component="pre"
       // color="white"
-      ml={1}
     >
       {editedText}
     </Typography>
@@ -52,75 +68,94 @@ const ConversationMessage: React.FC<MessageProps> = ({sender, text, onEdit, vers
 
   const editContent = (
     <Box display="flex" flexDirection="column" width="100%">
-      <TextareaAutosize
-        value={editedText}
-        onChange={(e) => setEditedText(e.target.value)}
-        minRows={3}
-        style={{
-          width: '100%',
-          marginLeft: '6px',
-          resize: 'none',
-          fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
-          fontSize: '1rem',
-          fontWeight: 400,
-          lineHeight: 1.5,
-          letterSpacing: '0.00938em',
-          backgroundColor: 'transparent',
-          border: 'none',
-          outline: 'none',
-          // color: 'white'
-        }}
-      />
-      <Box display="flex" justifyContent="center" mt={1}>
-        <Button variant="contained" color="primary" onClick={handleSave} size="small" sx={{mr: 1}}>
-          Save & Exit
-        </Button>
-        <Button variant="outlined" onClick={handleCancel} size="small">
-          Cancel
-        </Button>
-      </Box>
+      <form onSubmit={handleFormSubmit}>
+        <TextareaAutosize
+          value={editedText}
+          onChange={(e) => setEditedText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          minRows={3}
+          style={{
+            width: '100%',
+            resize: 'none',
+            fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
+            fontSize: '1rem',
+            fontWeight: 400,
+            lineHeight: 1.5,
+            letterSpacing: '0.00938em',
+            backgroundColor: 'transparent',
+            border: 'none',
+            outline: 'none',
+            // color: 'white'
+          }}
+        />
+
+        <Box display="flex" justifyContent="center" mt={1}>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            // onClick={handleSave}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            Save & Exit
+          </Button>
+          <Button variant="outlined" onClick={handleCancel} size="small">
+            Cancel
+          </Button>
+        </Box>
+      </form>
     </Box>
   );
 
   return (
-    <Box display="flex" justifyContent="center"
-         onMouseOver={(e) => setHovered(true)}
-         onMouseLeave={(e) => setHovered(false)}>
-      <Box
-        display="flex"
-        alignItems="flex-start"
-        justifyContent="center"
-        width="100%"
-        bgcolor={isUser ? 'grey.300' : 'grey.500'}
-        p={1}>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="flex-start"
+      width="100%"
+      bgcolor={isUser ? 'grey.300' : 'grey.500'}
+      p={1}
+      onMouseOver={(e) => setHovered(true)}
+      onMouseLeave={(e) => setHovered(false)}
+    >
+      <Box display="flex"
+           justifyContent="center"
+           gap={isLgScreen ? 2 : 1}
+           flexGrow={1}
+           maxWidth="md"
+      >
         <Box display="flex"
-             justifyContent="flex-start"
-             flexGrow={1}
-             maxWidth="md"
-             position="relative"
+             justifyContent="flex-end"
+             flexDirection={isLgScreen ? 'row' : 'column-reverse'}
+             gap={1}
+             width={isLgScreen ? 100 : 50}
+             minWidth={isLgScreen ? 100 : 50}
         >
           {!isEditing && isUser && versionControl && hovered && (
-            <Box style={{position: 'absolute', top: 0, left: isLgScreen ? -80 : 10 }}>
+            <Box>
               <MessageVersionControl
                 onPreviousVersion={versionControl.onPreviousVersion}
                 onNextVersion={versionControl.onNextVersion}
-                currentVersion={versionControl.currentVersion + 1}
+                currentVersion={versionControl.currentVersion}
                 totalVersions={versionControl.totalVersions}
               />
             </Box>
           )}
 
-          <Avatar variant="square">{avatarPlaceholder}</Avatar>
+          <Avatar variant="square" alt={sender} src={isUser ? "" : gptLogo}>{avatarPlaceholder}</Avatar>
+        </Box>
 
+        <Box flexGrow={1}>
           {isEditing ? editContent : messageContent}
+        </Box>
 
+        <Box width={30} minWidth={30}>
           {(onEdit && isUser && !isEditing && hovered) && (
             <IconButton
               onClick={() => setIsEditing(!isEditing)}
               size="small"
-              edge="end"
               color="inherit"
-              style={{position: 'absolute', top: 0, right: isLgScreen ? -40 : 10 }}
             >
               <EditIcon fontSize="inherit"/>
             </IconButton>

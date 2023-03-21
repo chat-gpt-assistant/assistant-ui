@@ -77,7 +77,11 @@ export const createChat = createAsyncThunk(
 export const chatSlice = createSlice({
   name: 'chat',
   initialState,
-  reducers: {},
+  reducers: {
+    resetSelectedChatStatus: (state) => {
+      state.selectedChatStatus = 'idle';
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchChats.pending, (state) => {
@@ -124,6 +128,7 @@ export const chatSlice = createSlice({
 export const selectChats = (state: RootState) => state.chat.chats;
 export const selectChatsStatus = (state: RootState) => state.chat.chatsStatus;
 export const selectSelectedChatStatus = (state: RootState) => state.chat.selectedChatStatus;
+export const selectSelectedChat = (state: RootState) => state.chat.selectedChat;
 
 export const selectSortedChats = createSelector(
   selectChats,
@@ -131,5 +136,7 @@ export const selectSortedChats = createSelector(
     return Object.values(chats).sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
   }
 );
+
+export const { resetSelectedChatStatus } = chatSlice.actions;
 
 export default chatSlice.reducer;
