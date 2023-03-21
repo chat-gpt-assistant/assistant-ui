@@ -19,7 +19,7 @@ export interface MessageProps {
   versionControl?: MessageVersionControlProps;
 }
 
-const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl}) => {
+const ConversationMessage: React.FC<MessageProps> = ({sender, text, onEdit, versionControl}) => {
   const theme = useTheme();
   const isLgScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
@@ -131,4 +131,4 @@ const Message: React.FC<MessageProps> = ({sender, text, onEdit, versionControl})
   );
 };
 
-export default Message;
+export default ConversationMessage;

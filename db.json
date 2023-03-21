@@ -9,14 +9,18 @@
         "m1": {
           "id": "m1",
           "parent": null,
-          "children": ["m2"],
+          "children": [
+            "m2"
+          ],
           "message": {
             "id": "m1",
             "author": "assistant",
             "createTime": "2023-03-16T14:10:00Z",
             "content": {
               "type": "text",
-              "parts": ["Hi, I'm assistant"]
+              "parts": [
+                "Hi, I'm assistant"
+              ]
             }
           }
         },
@@ -30,7 +34,9 @@
             "createTime": "2023-03-16T14:11:00Z",
             "content": {
               "type": "text",
-              "parts": ["Hello, how are you?"]
+              "parts": [
+                "Hello, how are you?"
+              ]
             }
           }
         }
@@ -39,20 +45,24 @@
     {
       "id": "c2",
       "title": "Sample Chat 2",
-      "createTime": "2023-03-16T14:00:00Z",
+      "createTime": "2023-03-16T14:01:00Z",
       "currentNode": "m1",
       "mapping": {
         "m1": {
           "id": "m1",
           "parent": null,
-          "children": ["m2"],
+          "children": [
+            "m2"
+          ],
           "message": {
             "id": "m1",
             "author": "assistant",
             "createTime": "2023-03-16T14:10:00Z",
             "content": {
               "type": "text",
-              "parts": ["Hi, I'm assistant"]
+              "parts": [
+                "Hi, I'm assistant"
+              ]
             }
           }
         },
@@ -66,7 +76,9 @@
             "createTime": "2023-03-16T14:11:00Z",
             "content": {
               "type": "text",
-              "parts": ["Hello, how are you?"]
+              "parts": [
+                "Hello, how are you?"
+              ]
             }
           }
         }

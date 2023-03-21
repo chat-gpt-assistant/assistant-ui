@@ -1,7 +1,7 @@
 import React from 'react';
 import { CssBaseline, Grid } from '@mui/material';
-import SidePanel from './components/SidePanel';
-import MainContent from './components/MainContent';
+import SidePanel from './components/side-panel/SidePanel';
+import { Outlet } from "react-router-dom";
 
 function App() {
   return (
@@ -12,7 +12,7 @@ function App() {
           <SidePanel/>
         </Grid>
         <Grid item xs={12} sm={8} md={9} sx={{display: 'flex', flexDirection: 'column'}}>
-          <MainContent/>
+          <Outlet/>
         </Grid>
       </Grid>
     </>

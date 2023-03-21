@@ -10,7 +10,7 @@ export interface Chat {
   title: string;
   createTime: Date;
   currentNode: string;
-  mapping: { [key: string]: ChatNode };
+  mapping: { [messageId: string]: ChatNode };
 }
 
 export interface ChatNode {

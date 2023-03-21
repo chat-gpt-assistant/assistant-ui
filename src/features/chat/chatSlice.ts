@@ -1,53 +1,114 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Chat } from "../../models";
+import { createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Chat, ChatNode } from "../../models";
 import axios from '../../axiosInstance';
+import { RootState } from "../../app/store";
 
 interface ChatState {
-  chats: Chat[]; //TODO: we need just title and meta info, because mapping will be loaded on demand
-  status: 'idle' | 'loading' | 'succeeded'| 'failed';
+  chats: { [id: string]: Chat };
+  selectedChat: Chat | null;
+  chatsStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  selectedChatStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
 const initialState: ChatState = {
-  chats: [],
-  status: 'idle',
+  chats: {},
+  selectedChat: null,
+  chatsStatus: 'idle',
+  selectedChatStatus: 'idle',
 };
 
 export const fetchChats = createAsyncThunk('chat/fetchChats', async () => {
   try {
-    const response = await axios.get<Chat[]>('/chats');
+    const response = await axios.get<Chat[]>('/chats'); // // TODO: we need to add params for pagination of chat nodes (0 by default for this endpoint)
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch chats');
   }
 });
 
+export const fetchChatById = createAsyncThunk(
+  'chat/fetchChatById',
+  async (chatId: string) => {
+    const response = await axios.get<Chat>(`/chats/${chatId}`); // TODO: we need to add params for pagination of chat nodes
+    return response.data;
+  }
+);
+
+export const deleteChat = createAsyncThunk(
+  'chat/deleteChat',
+  async (chatId: string) => {
+    await axios.delete(`/chats/${chatId}`);
+    return chatId;
+  }
+);
+
+export const deleteAllChats = createAsyncThunk(
+  'chat/deleteAllChats',
+  async () => {
+    await axios.delete('/chats');
+  }
+);
+
+export const updateChatTitle = createAsyncThunk(
+  'chat/updateChatTitle',
+  async ({ chatId, newTitle }: { chatId: string; newTitle: string }) => {
+    const response = await axios.patch(`/chats/${chatId}`, { title: newTitle });
+    return { chatId, newTitle };
+  }
+);
+
 export const chatSlice = createSlice({
   name: 'chat',
   initialState,
-  reducers: {
-    // setChats: (state, action: PayloadAction<Chat[]>) => {
-    //   state.chats = action.payload;
-    // },
-    // setStatus: (state, action: PayloadAction<ChatState['status']>) => {
-    //   state.status = action.payload;
-    // },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchChats.pending, (state) => {
-        state.status = 'loading';
+        state.chatsStatus = 'loading';
       })
       .addCase(fetchChats.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.chats = action.payload;
+        state.chatsStatus = 'succeeded';
+        action.payload.forEach(chat => {
+          state.chats[chat.id] = chat;
+        });
       })
       .addCase(fetchChats.rejected, (state) => {
-        state.status = 'failed';
+        state.chatsStatus = 'failed';
+      })
+      .addCase(fetchChatById.pending, (state) => {
+        state.selectedChatStatus = 'loading';
+      })
+      .addCase(fetchChatById.fulfilled, (state, action) => {
+        state.selectedChatStatus = 'succeeded';
+        state.selectedChat = action.payload;
+      })
+      .addCase(fetchChatById.rejected, (state) => {
+        state.selectedChatStatus = 'failed';
+      })
+      .addCase(deleteChat.fulfilled, (state, action) => {
+        delete state.chats[action.payload];
+      })
+      .addCase(deleteAllChats.fulfilled, (state) => {
+        state.chats = {};
+      })
+      .addCase(updateChatTitle.fulfilled, (state, action) => {
+        const { chatId, newTitle } = action.payload;
+        if (state.chats[chatId]) {
+          state.chats[chatId].title = newTitle;
+        }
       });
   }
 });
 
+export const selectChats = (state: RootState) => state.chat.chats;
+export const selectChatsStatus = (state: RootState) => state.chat.chatsStatus;
+export const selectSelectedChatStatus = (state: RootState) => state.chat.selectedChatStatus;
 
-// export const { setChats, setStatus } = chatSlice.actions;
+export const selectSortedChats = createSelector(
+  selectChats,
+  (chats) => {
+    return Object.values(chats).sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+  }
+);
 
 export default chatSlice.reducer;
