@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, IconButton, TextareaAutosize, CircularProgress } from '@mui/material';
-import MicNoneIcon from '@mui/icons-material/MicNone';
+import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import ResponseControl from './ResponseControl';
 
@@ -13,7 +13,24 @@ interface InputPanelProps {
 const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
   const [isAssistantResponding, setIsAssistantResponding] = useState(false);
   const [text, setText] = useState('');
-  const [isMicMuted, setIsMicMuted] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+
+  useEffect(() => {
+    const recordedChunks: Blob[] = [];
+
+    if (mediaRecorder) {
+      mediaRecorder.addEventListener('dataavailable', (event) => {
+        recordedChunks.push(event.data);
+      });
+      mediaRecorder.addEventListener('stop', () => {
+        const recordedBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const audioURL = window.URL.createObjectURL(recordedBlob);
+        const audio = new Audio(audioURL);
+        audio.play();
+      });
+    }
+  }, [mediaRecorder]);
 
   const handleStopGenerating = () => {
     onStopGenerating();
@@ -44,11 +61,29 @@ const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGeneratin
     }
   };
 
-  const handleMicToggle = () => {
-    setIsMicMuted(!isMicMuted);
+  const handleMicDown = async () => {
+    if (isRecording) {
+      return handleMicUp();
+    }
 
-    if (!isMicMuted) {
-      // TODO: record voice
+    setIsRecording(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      const mediaRecorder = new MediaRecorder(stream);
+      setMediaRecorder(mediaRecorder);
+      mediaRecorder.start();
+    } catch (error) {
+      console.error('Error accessing the microphone:', error);
+      setIsRecording(false);
+    }
+  };
+
+  const handleMicUp = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setMediaRecorder(null);
+      setIsRecording(false);
     }
   };
 
@@ -79,10 +114,16 @@ const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGeneratin
               backgroundColor: 'grey.300',
             }}
           >
-            <IconButton color="primary"
-                        sx={{position: 'absolute', left: 4, bottom: 8}}
-                        onClick={handleMicToggle}>
-              <MicNoneIcon color={isMicMuted ? 'disabled' : 'primary'}/>
+            <IconButton color={isRecording ? 'error' : 'primary'}
+                        sx={{
+                          position: 'absolute',
+                          left: 4,
+                          bottom: 8,
+                        }}
+                        onMouseDown={handleMicDown}
+                        onMouseUp={handleMicUp}
+            >
+              <MicIcon/>
             </IconButton>
 
             <TextareaAutosize
