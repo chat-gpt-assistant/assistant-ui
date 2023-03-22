@@ -4,18 +4,24 @@ import MicNoneIcon from '@mui/icons-material/MicNone';
 import SendIcon from '@mui/icons-material/Send';
 import ResponseControl from './ResponseControl';
 
-const InputPanel: React.FC = () => {
+interface InputPanelProps {
+  onSubmitMessage: (text: string) => void;
+  onStopGenerating: () => void;
+  onRegenerateResponse: () => void;
+}
+
+const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
   const [isAssistantResponding, setIsAssistantResponding] = useState(false);
   const [text, setText] = useState('');
   const [isMicMuted, setIsMicMuted] = useState(true);
 
   const handleStopGenerating = () => {
-    // Implement stopping the assistant's response generation
+    onStopGenerating();
     setIsAssistantResponding(false);
   };
 
   const handleRegenerateResponse = () => {
-    // Implement regenerating the assistant's response
+    onRegenerateResponse();
     setIsAssistantResponding(true);
   };
 
@@ -33,14 +39,17 @@ const InputPanel: React.FC = () => {
   const handleSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     if (text.trim()) {
-      // Implement the message submission logic here
-      console.log('Submitted message:', text);
+      onSubmitMessage(text);
       setText('');
     }
   };
 
   const handleMicToggle = () => {
     setIsMicMuted(!isMicMuted);
+
+    if (!isMicMuted) {
+      // TODO: record voice
+    }
   };
 
   return (

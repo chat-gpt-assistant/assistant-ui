@@ -60,6 +60,10 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
       variant="body1"
       width="100%"
       component="pre"
+      sx={{
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      }}
       // color="white"
     >
       {editedText}
@@ -73,7 +77,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
           value={editedText}
           onChange={(e) => setEditedText(e.target.value)}
           onKeyDown={handleKeyDown}
-          minRows={3}
+          minRows={2}
           style={{
             width: '100%',
             resize: 'none',
@@ -89,12 +93,11 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
           }}
         />
 
-        <Box display="flex" justifyContent="center" mt={1}>
+        <Box display="flex" justifyContent="center" mt={.5}>
           <Button
             type="submit"
             variant="contained"
             color="primary"
-            // onClick={handleSave}
             size="small"
             sx={{ mr: 1 }}
           >
@@ -132,7 +135,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
              width={isLgScreen ? 100 : 50}
              minWidth={isLgScreen ? 100 : 50}
         >
-          {!isEditing && isUser && versionControl && hovered && (
+          {!isEditing && versionControl && hovered && (
             <Box>
               <MessageVersionControl
                 onPreviousVersion={versionControl.onPreviousVersion}

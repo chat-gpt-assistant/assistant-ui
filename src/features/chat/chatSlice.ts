@@ -1,5 +1,5 @@
-import { createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Chat } from "../../models";
+import { createAsyncThunk, createSelector, createSlice } from '@reduxjs/toolkit';
+import { Chat, ChatNode } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
 import { v4 as uuidv4 } from 'uuid';
@@ -18,22 +18,85 @@ const initialState: ChatState = {
   selectedChatStatus: 'idle',
 };
 
-export const fetchChats = createAsyncThunk('chat/fetchChats', async () => {
+/**
+ * Fetches all chats
+ * @param size - number of chats to fetch
+ */
+export const fetchChats = createAsyncThunk('chat/fetchChats', async ({
+                                                                       size = 20,
+                                                                     }: { size?: number } = {}) => {
   try {
-    const response = await axios.get<Chat[]>('/chats'); // // TODO: we need to add params for pagination of chat nodes (0 by default for this endpoint)
+    const response = await axios.get<Chat[]>('/chats', {
+      params: {
+        size,
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch chats');
   }
 });
 
+/**
+ * Fetches a chat by id
+ * @param chatId - id of the chat to fetch
+ * @param currentNode - id of the node to start from (it can be a leaf or a branch)
+ * @param upperLimit - number of nodes to fetch above the currentNode (until the root)
+ * @param lowerLimit - number of nodes to fetch below the currentNode (the latest child is preferred unless it is a leaf)
+ */
 export const fetchChatById = createAsyncThunk(
   'chat/fetchChatById',
-  async (chatId: string) => {
-    const response = await axios.get<Chat>(`/chats/${chatId}`); // TODO: we need to add params for pagination of chat nodes
+  async ({
+           chatId,
+           currentNode = undefined, // TODO: change currentNode in selected Chat
+           upperLimit = undefined,
+           lowerLimit = undefined
+         }: { chatId: string; currentNode?: string; upperLimit?: number, lowerLimit?: number }) => {
+    const response = await axios.get<Chat>(`/chats/${chatId}`, {
+      params: {
+        currentNode,
+        upperLimit,
+        lowerLimit
+      },
+    });
     return response.data;
   }
 );
+
+/**
+ * Updates the content of a node in the chat. Once the node is updated, all children of the node are deleted.
+ * @param chatId - id of the chat to update the node in
+ * @param nodeId - id of the node to update
+ * @param newContent - new content of the node
+ */
+export const updateChatNodeMessageContent = createAsyncThunk(
+  'chat/updateMessageContent',
+  async ({chatId, nodeId, newContent}: { chatId: string; nodeId: string; newContent: string }) => {
+    const response = await axios.patch<ChatNode>(`/chats/${chatId}`, {
+      currentNode: nodeId,
+      content: newContent
+    });
+    return {chatId, updatedNode: response.data};
+  }
+);
+
+/**
+ * Creates a new node in the chat
+ * @param chatId - id of the chat to add the node to
+ * @param nodeId - id of the node to add the new node to (parent of future node)
+ * @param newMessage - content of the new node
+ */
+export const postNewChatNode = createAsyncThunk(
+  'chat/postNewChatNode',
+  async ({chatId, nodeId, newMessage}: { chatId: string; nodeId: string; newMessage: string }) => {
+    const response = await axios.post(`/chats/${chatId}`, {
+      currentNode: nodeId, //parentNodeId
+      content: newMessage
+    });
+    return {chatId, newNode: response.data};
+  }
+);
+
 
 export const deleteChat = createAsyncThunk(
   'chat/deleteChat',
@@ -52,9 +115,9 @@ export const deleteAllChats = createAsyncThunk(
 
 export const updateChatTitle = createAsyncThunk(
   'chat/updateChatTitle',
-  async ({ chatId, newTitle }: { chatId: string; newTitle: string }) => {
-    const response = await axios.patch(`/chats/${chatId}`, { title: newTitle });
-    return { chatId, newTitle };
+  async ({chatId, newTitle}: { chatId: string; newTitle: string }) => {
+    const response = await axios.patch(`/chats/${chatId}`, {title: newTitle});
+    return {chatId, newTitle};
   }
 );
 
@@ -113,7 +176,7 @@ export const chatSlice = createSlice({
         state.chats = {};
       })
       .addCase(updateChatTitle.fulfilled, (state, action) => {
-        const { chatId, newTitle } = action.payload;
+        const {chatId, newTitle} = action.payload;
         if (state.chats[chatId]) {
           state.chats[chatId].title = newTitle;
         }
@@ -121,6 +184,28 @@ export const chatSlice = createSlice({
       .addCase(createChat.fulfilled, (state, action) => {
         const newChat = action.payload;
         state.chats[newChat.id] = newChat;
+      })
+      .addCase(updateChatNodeMessageContent.fulfilled, (state, action) => {
+        // TODO: test
+        const {chatId, updatedNode} = action.payload;
+        if (state.chats[chatId]) {
+          if (state.selectedChat) {
+            state.selectedChat.currentNode = updatedNode.id;
+          }
+          state.chats[chatId].mapping[updatedNode.id] = updatedNode;
+        }
+      })
+      .addCase(postNewChatNode.fulfilled, (state, action) => {
+        // TODO: test
+        const {chatId, newNode} = action.payload;
+        if (state.chats[chatId]) {
+          if (state.selectedChat) {
+            state.selectedChat.currentNode = newNode.id;
+          }
+
+          state.chats[chatId].mapping[newNode.parent].children.push(newNode.id);
+          state.chats[chatId].mapping[newNode.id] = newNode;
+        }
       })
   }
 });
@@ -133,10 +218,11 @@ export const selectSelectedChat = (state: RootState) => state.chat.selectedChat;
 export const selectSortedChats = createSelector(
   selectChats,
   (chats) => {
-    return Object.values(chats).sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+    return Object.values(chats)
+      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
   }
 );
 
-export const { resetSelectedChatStatus } = chatSlice.actions;
+export const {resetSelectedChatStatus} = chatSlice.actions;
 
 export default chatSlice.reducer;
