@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSelector, createSlice } from '@reduxjs/toolkit';
+import { createAction, createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Chat, ChatNode } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
@@ -80,6 +80,10 @@ export const updateChatNodeMessageContent = createAsyncThunk(
   }
 );
 
+export const addChatNodeContent = createAction<{ chatId: string; nodeId: string; content: string }>(
+  'chat/addChatNodeContent'
+);
+
 /**
  * Creates a new node in the chat
  * @param chatId - id of the chat to add the node to
@@ -88,12 +92,36 @@ export const updateChatNodeMessageContent = createAsyncThunk(
  */
 export const postNewChatNode = createAsyncThunk(
   'chat/postNewChatNode',
-  async ({chatId, nodeId, newMessage}: { chatId: string; nodeId: string; newMessage: string }) => {
-    const response = await axios.post(`/chats/${chatId}`, {
-      currentNode: nodeId, //parentNodeId
-      content: newMessage
-    });
-    return {chatId, newNode: response.data};
+  async ({chatId, nodeId, newMessage}: { chatId: string; nodeId: string; newMessage: string }, {dispatch}) => {
+    try {
+      const response = await axios.post<ChatNode>(`/chats/${chatId}`, {
+        currentNode: nodeId, //parentNode
+        content: newMessage,
+      });
+      const createdChatNode = response.data;
+
+      const eventSource = new EventSource(`/chats/${chatId}/sse/node/${createdChatNode.id}`);
+
+      eventSource.onerror = (error) => {
+        console.error(error);
+      };
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'content-update') {
+          const { chatId, nodeId, content } = data.payload;
+          dispatch(addChatNodeContent({ chatId, nodeId, content }));
+        }
+      };
+
+      const result = { chatId, newNode: createdChatNode };
+      return {
+        result,
+        eventSource
+      };
+    } catch (error) {
+      throw new Error('Failed to post new chat node');
+    }
   }
 );
 
@@ -144,6 +172,20 @@ export const chatSlice = createSlice({
     resetSelectedChatStatus: (state) => {
       state.selectedChatStatus = 'idle';
     },
+    addChatNodeContent: (state, action: PayloadAction<{ chatId: string; nodeId: string; content: string }>) => {
+      const { chatId, nodeId, content } = action.payload;
+      if (!state.selectedChat) {
+        return;
+      }
+
+      if (state.selectedChat.id !== chatId) {
+        console.error('Chat id does not match the selected chat id');
+        return;
+      }
+
+      const node = state.selectedChat.mapping[nodeId];
+      node.message.content.parts.push(content);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -188,23 +230,36 @@ export const chatSlice = createSlice({
       .addCase(updateChatNodeMessageContent.fulfilled, (state, action) => {
         // TODO: test
         const {chatId, updatedNode} = action.payload;
-        if (state.chats[chatId]) {
-          if (state.selectedChat) {
-            state.selectedChat.currentNode = updatedNode.id;
+        if (state.selectedChat) {
+          if (state.selectedChat.id !== chatId) {
+            console.error('Chat id does not match the selected chat id');
+            return;
           }
-          state.chats[chatId].mapping[updatedNode.id] = updatedNode;
+
+          state.selectedChat.currentNode = updatedNode.id;
+
+          if (updatedNode.parent) {
+            state.selectedChat.mapping[updatedNode.parent].children = [updatedNode.id];
+          }
+          state.selectedChat.mapping[updatedNode.id] = updatedNode;
         }
       })
       .addCase(postNewChatNode.fulfilled, (state, action) => {
         // TODO: test
-        const {chatId, newNode} = action.payload;
-        if (state.chats[chatId]) {
-          if (state.selectedChat) {
-            state.selectedChat.currentNode = newNode.id;
+        const {chatId, newNode} = action.payload.result;
+
+        if (state.selectedChat) {
+          if (state.selectedChat.id !== chatId) {
+            console.error('Chat id does not match the selected chat id');
+            return;
           }
 
-          state.chats[chatId].mapping[newNode.parent].children.push(newNode.id);
-          state.chats[chatId].mapping[newNode.id] = newNode;
+          state.selectedChat.currentNode = newNode.id;
+
+          if (newNode.parent) {
+            state.selectedChat.mapping[newNode.parent].children.push(newNode.id);
+          }
+          state.selectedChat.mapping[newNode.id] = newNode;
         }
       })
   }

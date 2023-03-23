@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Box } from '@mui/material';
 import ConversationHistory from './ConversationHistory';
 import InputPanel from './InputPanel';
@@ -14,18 +14,28 @@ import {
 } from "../../features/chat/chatSlice";
 
 const Conversation: React.FC = () => {
-  const { id } = useParams();
+  const {id} = useParams();
 
   const dispatch = useAppDispatch();
   const selectedChatStatus = useAppSelector(selectSelectedChatStatus);
   const selectedChat = useAppSelector(selectSelectedChat);
+
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
+
 
   const handleEditMessage = (messageId: string, newText: string) => {
     dispatch(updateChatNodeMessageContent({chatId: id!, nodeId: messageId, newContent: newText}));
   };
 
   const handleSubmittedMessage = (message: string) => {
-    dispatch(postNewChatNode({chatId: id!, nodeId: selectedChat!.currentNode, newMessage: message}));
+    dispatch(postNewChatNode({
+      chatId: id!,
+      nodeId: selectedChat!.currentNode,
+      newMessage: message
+    })).unwrap()
+      .then((result) => {
+        setEventSource(result.eventSource);
+      });
   }
 
   const handlePreviousVersion = (prevMessageId: string) => {
@@ -50,6 +60,7 @@ const Conversation: React.FC = () => {
 
   const handleStopGenerating = () => {
     // TODO: implement logic for stopping the generation of messages
+    eventSource?.close();
   };
 
   const handleRegenerateResponse = () => {
@@ -63,7 +74,7 @@ const Conversation: React.FC = () => {
 
   useEffect(() => {
     if (id && selectedChatStatus === 'idle') {
-      dispatch(fetchChatById({ chatId: id }));
+      dispatch(fetchChatById({chatId: id}));
     }
   }, [selectedChatStatus, dispatch, id]);
 
