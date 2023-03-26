@@ -2,7 +2,7 @@ import { createAction, createAsyncThunk, createSelector, createSlice, PayloadAct
 import { Chat, ChatNode } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
-import { v4 as uuidv4 } from 'uuid';
+import { Page } from "../../models/pagination";
 
 interface ChatState {
   chats: { [id: string]: Chat };
@@ -23,15 +23,17 @@ const initialState: ChatState = {
  * @param size - number of chats to fetch
  */
 export const fetchChats = createAsyncThunk('chat/fetchChats', async ({
+                                                                       page = 0,
                                                                        size = 20,
-                                                                     }: { size?: number } = {}) => {
+                                                                     }: { page?: number, size?: number } = {}) => {
   try {
-    const response = await axios.get<Chat[]>('/chats', {
+    const response = await axios.get<Page<Chat>>('/chats', {
       params: {
+        page,
         size,
       },
     });
-    return response.data;
+    return response.data.content;
   } catch (error) {
     throw new Error('Failed to fetch chats');
   }
@@ -145,23 +147,17 @@ export const updateChatTitle = createAsyncThunk(
   'chat/updateChatTitle',
   async ({chatId, newTitle}: { chatId: string; newTitle: string }) => {
     const response = await axios.patch(`/chats/${chatId}`, {title: newTitle});
-    return {chatId, newTitle};
+    return {chatId, newTitle: response.data.title};
   }
 );
 
 export const createChat = createAsyncThunk(
   'chat/createChat',
   async () => {
-    const newChat: Chat = {
-      id: uuidv4(),
+    const response = await axios.post('/chats', {
       title: 'New Chat',
-      createTime: new Date(), // TODO: server should not care about this and text fields
-      currentNode: '',
-      mapping: {},
-    };
-
-    await axios.post('/chats', newChat);
-    return newChat;
+    });
+    return response.data;
   }
 );
 

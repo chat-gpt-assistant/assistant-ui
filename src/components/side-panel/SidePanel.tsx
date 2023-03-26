@@ -37,7 +37,7 @@ const SidePanel: React.FC = () => {
 
   useEffect(() => {
     if (chatsStatus === 'idle') {
-      dispatch(fetchChats());
+      dispatch(fetchChats({ size: 100 }));
     }
   }, [chatsStatus, dispatch]);
 
