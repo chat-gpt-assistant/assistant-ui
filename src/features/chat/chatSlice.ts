@@ -234,7 +234,10 @@ export const chatSlice = createSlice({
             return;
           }
 
-          state.selectedConversation = conversation;
+          state.selectedConversation.currentNode = conversation.currentNode;
+          Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
+            state.selectedConversation!.mapping[nodeId] = node;
+          });
         }
       })
       .addCase(postNewMessageToConversation.fulfilled, (state, action) => {
@@ -247,7 +250,10 @@ export const chatSlice = createSlice({
             return;
           }
 
-          state.selectedConversation = conversation;
+          state.selectedConversation.currentNode = conversation.currentNode;
+          Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
+            state.selectedConversation!.mapping[nodeId] = node;
+          });
         }
       })
   }
