@@ -2,7 +2,6 @@ import { createAction, createAsyncThunk, createSelector, createSlice, PayloadAct
 import { Chat, Conversation } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
-import { Page } from "../../models/pagination";
 
 interface ChatState {
   chats: { [id: string]: Chat };
@@ -27,13 +26,13 @@ export const fetchChats = createAsyncThunk('chat/fetchChats', async ({
                                                                        size = 20,
                                                                      }: { page?: number, size?: number } = {}) => {
   try {
-    const response = await axios.get<Page<Chat>>('/chats', {
+    const response = await axios.get<Chat[]>('/chats', {
       params: {
         page,
         size,
       },
     });
-    return response.data.content;
+    return response.data;
   } catch (error) {
     throw new Error('Failed to fetch chats');
   }
