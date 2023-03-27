@@ -5,7 +5,6 @@ import {
   Button,
   IconButton,
   TextareaAutosize,
-  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -13,6 +12,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import MessageVersionControl, { MessageVersionControlProps } from './MessageVersionControl';
 import gptLogo from '../../logo.svg';
 import { Author } from "../../models";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from "rehype-highlight";
 
 export interface MessageProps {
   id: string;
@@ -57,18 +59,9 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   };
 
   const messageContent = (
-    <Typography
-      variant="body1"
-      width="100%"
-      component="pre"
-      sx={{
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-      }}
-      // color="white"
-    >
-      {editedText}
-    </Typography>
+    <ReactMarkdown children={editedText}
+                   remarkPlugins={[remarkGfm]}
+                   rehypePlugins={[rehypeHighlight]}/>
   );
 
   const editContent = (
