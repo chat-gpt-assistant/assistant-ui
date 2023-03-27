@@ -145,7 +145,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
       .map((sibling) => nodesSupplier(sibling))
       .findIndex((sibling) => sibling && sibling.id === chatNode.id);
 
-    return [currentVersion + 1, siblings.length];
+    return [currentVersion + 1, siblings.length]; // TODO: fix, we can have [0, 0]
   };
 
   const getNextSiblingId = (messageId: string, step: number): string => {

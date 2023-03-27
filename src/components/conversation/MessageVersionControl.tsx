@@ -15,7 +15,7 @@ const MessageVersionControl: React.FC<MessageVersionControlProps> = ({
                                                                        onPreviousVersion,
                                                                        onNextVersion,
                                                                      }) => {
-  if (totalVersions === 1) {
+  if (totalVersions <= 1) {
     return null;
   }
 
