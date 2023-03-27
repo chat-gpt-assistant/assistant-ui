@@ -5,32 +5,31 @@ import InputPanel from './InputPanel';
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
-  fetchChatById,
-  postNewChatNode,
+  fetchConversationByChatId,
+  postNewMessageToConversation,
   resetSelectedChatStatus,
-  selectSelectedChat,
-  selectSelectedChatStatus,
-  updateChatNodeMessageContent
+  selectSelectedConversation,
+  selectSelectedConversationStatus,
+  updateConversationMessageContent
 } from "../../features/chat/chatSlice";
 
 const Conversation: React.FC = () => {
   const {id} = useParams();
 
   const dispatch = useAppDispatch();
-  const selectedChatStatus = useAppSelector(selectSelectedChatStatus);
-  const selectedChat = useAppSelector(selectSelectedChat);
+  const selectedConversationStatus = useAppSelector(selectSelectedConversationStatus);
+  const selectedConversation = useAppSelector(selectSelectedConversation);
 
   const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
 
   const handleEditMessage = (messageId: string, newText: string) => {
-    dispatch(updateChatNodeMessageContent({chatId: id!, nodeId: messageId, newContent: newText}));
+    dispatch(updateConversationMessageContent({chatId: id!, nodeId: messageId, newContent: newText}));
   };
 
   const handleSubmittedMessage = (message: string) => {
-    dispatch(postNewChatNode({
+    dispatch(postNewMessageToConversation({
       chatId: id!,
-      nodeId: selectedChat!.currentNode,
       newMessage: message
     })).unwrap()
       .then((result) => {
@@ -40,7 +39,7 @@ const Conversation: React.FC = () => {
 
   const handlePreviousVersion = (prevMessageId: string) => {
     // we need to load chat history from the prevMessageId and down to the leaf
-    dispatch(fetchChatById({
+    dispatch(fetchConversationByChatId({
       chatId: id!,
       currentNode: prevMessageId,
       upperLimit: 0,
@@ -50,7 +49,7 @@ const Conversation: React.FC = () => {
 
   const handleNextVersion = (nextMessageId: string) => {
     // we need to load chat history from the nextMessageId and down to the leaf
-    dispatch(fetchChatById({
+    dispatch(fetchConversationByChatId({
       chatId: id!,
       currentNode: nextMessageId,
       upperLimit: 0,
@@ -73,16 +72,16 @@ const Conversation: React.FC = () => {
   }, [id, dispatch]);
 
   useEffect(() => {
-    if (id && selectedChatStatus === 'idle') {
-      dispatch(fetchChatById({chatId: id}));
+    if (id && selectedConversationStatus === 'idle') {
+      dispatch(fetchConversationByChatId({chatId: id, upperLimit: 10, lowerLimit: 10}));
     }
-  }, [selectedChatStatus, dispatch, id]);
+  }, [selectedConversationStatus, dispatch, id]);
 
   return (
     <Box display="flex" flexDirection="column" height="100vh" bgcolor="grey.200" position="relative">
       <Box flexGrow={1} overflow="auto">
-        {id && selectedChat ? (
-          <ConversationHistory chat={selectedChat}
+        {id && selectedConversation ? (
+          <ConversationHistory conversation={selectedConversation}
                                onEditMessage={handleEditMessage}
                                onPreviousVersion={handlePreviousVersion}
                                onNextVersion={handleNextVersion}/>

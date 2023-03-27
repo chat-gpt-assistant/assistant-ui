@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import { Chat, ChatNode, Message } from "../../models";
+import { ChatNode, Conversation, Message } from "../../models";
 import ConversationMessage from "./ConversationMessage";
 
 interface ConversationHistoryProps {
-  chat: Chat;
+  conversation: Conversation;
   onEditMessage: (messageId: string, newText: string) => void;
   onPreviousVersion: (prevMessageId: string) => void;
   onNextVersion: (nextMessageId: string) => void;
@@ -12,22 +12,16 @@ interface ConversationHistoryProps {
 
 /**
  * This function builds the conversation history from the current node down to the last child.
- * @param nodesMapping - mapping of all nodes in the chat
+ * @param nodesSupplier - function that supplies the node by id
  * @param currentNodeId - id of the current node
- * @param inclusive - if true, the current node will be included in the result
  */
-function buildConversationDownToTheLastChild(nodesMapping: { [p: string]: ChatNode },
-                                             currentNodeId: string,
-                                             inclusive = false): Message[] {
+function buildConversationDownToTheLastChild(nodesSupplier: (nodeId: string) => ChatNode | null,
+                                             currentNodeId: string): Message[] {
   const messages: Message[] = [];
 
-  let currentNode = nodesMapping[currentNodeId];
+  let currentNode = nodesSupplier(currentNodeId);
 
-  if (inclusive) {
-    messages.push(currentNode.message);
-  }
-
-  while (true) {
+  while (currentNode) {
     const currentNodeChildren = currentNode.children;
 
     if (!currentNodeChildren || !currentNodeChildren.length) {
@@ -36,8 +30,10 @@ function buildConversationDownToTheLastChild(nodesMapping: { [p: string]: ChatNo
     }
 
     const newestChild = currentNodeChildren[currentNodeChildren.length - 1];
-    currentNode = nodesMapping[newestChild];
-
+    currentNode = nodesSupplier(newestChild);
+    if (!currentNode) {
+      break;
+    }
     messages.push(currentNode.message);
   }
 
@@ -45,80 +41,120 @@ function buildConversationDownToTheLastChild(nodesMapping: { [p: string]: ChatNo
 }
 
 /**
- * This function builds the conversation history from the current node up to the root node and down to the last child (preferencing the last child).
- * @param nodesMapping - mapping of all nodes in the chat
+ * This function builds the conversation history from the current node up to the root node.
+ * @param nodesSupplier - function that supplies the node by id
  * @param currentNodeId - id of the current node
  */
-function buildConversationHistory(nodesMapping: { [p: string]: ChatNode },
-                                  currentNodeId: string): Message[] {
+function buildConversationHistoryUp(nodesSupplier: (nodeId: string) => ChatNode | null, currentNodeId: string): Message[] {
   const messages: Message[] = [];
 
-  let currentChatNode = nodesMapping[currentNodeId]
+  let currentNode = nodesSupplier(currentNodeId);
 
-  if (!currentChatNode) {
-    // TODO: Handle this case, when chat has just been created. We should get title from summary of the first message.
-    return messages;
-  }
-
-  if (currentChatNode.children && currentChatNode.children.length) {
-    messages.push(...(buildConversationDownToTheLastChild(nodesMapping, currentChatNode.id)));
-  }
-
-  while (currentChatNode) {
-    messages.unshift(currentChatNode.message);
-
-    if (currentChatNode.parent) {
-      currentChatNode = nodesMapping[currentChatNode.parent];
-    } else {
+  while (currentNode) {
+    if (!currentNode.parent) {
       break;
     }
-  }
 
+    currentNode = nodesSupplier(currentNode.parent);
+    if (!currentNode) {
+      break;
+    }
+    messages.unshift(currentNode.message);
+  }
   return messages;
 }
 
+
+// TODO: test this function
+function createNodeSupplier(
+  nodesMapping: { [p: string]: ChatNode },
+  fetcher: (missingNodeId: string) => boolean
+): (nodeId: string) => ChatNode | null {
+
+
+  // try to fetch nodes until we reach the root node or leaf node
+  return (nodeId: string): ChatNode | null => {
+    const node = nodesMapping[nodeId];
+
+    if (!node) {
+      const final = fetcher(nodeId);
+      if (final) {
+        return null;
+      }
+    }
+
+    return node;
+  };
+}
+
 /**
- * This function builds the conversation history for the specified chat.
- * @param chat - chat to build the conversation history for
+ * This function builds the conversation history from the current node up to the root node and down to the last child (preference the last child).
+ * @param nodesSupplier - function that supplies the node by id
+ * @param conversation - conversation to build the history for
  */
-function buildConversationHistoryForChat(chat: Chat) {
-  return buildConversationHistory(chat.mapping, chat.currentNode);
+function buildConversationHistory(conversation: Conversation, nodesSupplier: (nodeId: string) => ChatNode | null): Message[] {
+  const currentNodeId = conversation.currentNode;
+
+  let currentChatNode = nodesSupplier(currentNodeId);
+
+  if (!currentChatNode) {
+    return [];
+  }
+
+  return [
+    ...buildConversationHistoryUp(nodesSupplier, currentChatNode.id),
+    currentChatNode.message,
+    ...buildConversationDownToTheLastChild(nodesSupplier, currentChatNode.id)
+  ];
 }
 
 const ConversationHistory: React.FC<ConversationHistoryProps> = ({
-                                                                   chat,
+                                                                   conversation,
                                                                    onEditMessage,
                                                                    onPreviousVersion,
                                                                    onNextVersion
                                                                  }) => {
-  const messages = buildConversationHistoryForChat(chat);
+  const nodesSupplier = createNodeSupplier(
+    conversation.mapping,
+    (missingNodeId: string) => {
+      // TODO: try to fetch the missing nodes up or down
+      // 1. find out the direction
+      // 2. fetch the missing nodes
 
-  const getChatNode = (messageId: string): ChatNode => chat.mapping[messageId];
+
+      return true;
+    }
+  );
+  const messages = buildConversationHistory(conversation, nodesSupplier);
 
   const getVersions = (message: Message) => {
-    const chatNode = getChatNode(message.id);
+    const chatNode = nodesSupplier(message.id);
 
-    if (!chatNode.parent) {
+    if (!chatNode || !chatNode.parent) {
       return [1, 1];
     }
 
-    const parent = getChatNode(chatNode.parent);
+    const parent = nodesSupplier(chatNode.parent);
+    if (!parent) {
+      return [1, 1];
+    }
+
     const siblings = parent.children;
 
     const currentVersion = siblings
-      .map((sibling) => getChatNode(sibling))
-      .findIndex((sibling) => sibling.id === chatNode.id);
+      .map((sibling) => nodesSupplier(sibling))
+      .findIndex((sibling) => sibling && sibling.id === chatNode.id);
 
     return [currentVersion + 1, siblings.length];
   };
 
   const getNextSiblingId = (messageId: string, step: number): string => {
-    const currentNode = chat.mapping[messageId];
+    const currentNode = conversation.mapping[messageId];
     if (!currentNode.parent) {
       return messageId;
     }
 
-    const parent = chat.mapping[currentNode.parent];
+    const parent = conversation.mapping[currentNode.parent];
     const children = parent.children;
     if (!children.length) {
       return messageId;
@@ -147,7 +183,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
       bgcolor="grey.300"
     >
       <Typography variant="h6" m={1}>
-        {chat.title}
+        {conversation.title}
       </Typography>
 
       <Box flexGrow={1}>

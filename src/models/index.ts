@@ -9,6 +9,12 @@ export interface Chat {
   id: string;
   title: string;
   createTime: Date;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  createTime: Date;
   currentNode: string;
   mapping: { [messageId: string]: ChatNode };
 }
@@ -22,10 +28,12 @@ export interface ChatNode {
 
 export interface Message {
   id: string;
-  author: "assistant" | "user";
+  author: Author;
   createTime: Date;
   content: Content;
 }
+
+export type Author = "ASSISTANT" | "USER";
 
 export interface Content {
   type: string;

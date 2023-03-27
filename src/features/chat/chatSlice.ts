@@ -1,21 +1,21 @@
 import { createAction, createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Chat, ChatNode } from "../../models";
+import { Chat, Conversation } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
 import { Page } from "../../models/pagination";
 
 interface ChatState {
   chats: { [id: string]: Chat };
-  selectedChat: Chat | null;
+  selectedConversation: Conversation | null;
   chatsStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
-  selectedChatStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  selectedConversationStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
 const initialState: ChatState = {
   chats: {},
-  selectedChat: null,
+  selectedConversation: null,
   chatsStatus: 'idle',
-  selectedChatStatus: 'idle',
+  selectedConversationStatus: 'idle',
 };
 
 /**
@@ -40,21 +40,21 @@ export const fetchChats = createAsyncThunk('chat/fetchChats', async ({
 });
 
 /**
- * Fetches a chat by id
- * @param chatId - id of the chat to fetch
+ * Fetches a chat conversation by id
+ * @param chatId - id of the chat conversation to fetch
  * @param currentNode - id of the node to start from (it can be a leaf or a branch)
  * @param upperLimit - number of nodes to fetch above the currentNode (until the root)
  * @param lowerLimit - number of nodes to fetch below the currentNode (the latest child is preferred unless it is a leaf)
  */
-export const fetchChatById = createAsyncThunk(
-  'chat/fetchChatById',
+export const fetchConversationByChatId = createAsyncThunk(
+  'chat/fetchConversationByChatId',
   async ({
            chatId,
-           currentNode = undefined, // TODO: change currentNode in selected Chat
+           currentNode = undefined,
            upperLimit = undefined,
            lowerLimit = undefined
          }: { chatId: string; currentNode?: string; upperLimit?: number, lowerLimit?: number }) => {
-    const response = await axios.get<Chat>(`/chats/${chatId}`, {
+    const response = await axios.get<Conversation>(`/chats/${chatId}/conversation`, {
       params: {
         currentNode,
         upperLimit,
@@ -71,17 +71,18 @@ export const fetchChatById = createAsyncThunk(
  * @param nodeId - id of the node to update
  * @param newContent - new content of the node
  */
-export const updateChatNodeMessageContent = createAsyncThunk(
-  'chat/updateMessageContent',
+export const updateConversationMessageContent = createAsyncThunk(
+  'chat/updateConversationMessageContent',
   async ({chatId, nodeId, newContent}: { chatId: string; nodeId: string; newContent: string }) => {
-    const response = await axios.patch<ChatNode>(`/chats/${chatId}`, {
+    const response = await axios.patch<Conversation>(`/chats/${chatId}/conversation`, {
       currentNode: nodeId,
       content: newContent
     });
-    return {chatId, updatedNode: response.data};
+    return response.data;
   }
 );
 
+// TODO: review this
 export const addChatNodeContent = createAction<{ chatId: string; nodeId: string; content: string }>(
   'chat/addChatNodeContent'
 );
@@ -92,17 +93,17 @@ export const addChatNodeContent = createAction<{ chatId: string; nodeId: string;
  * @param nodeId - id of the node to add the new node to (parent of future node)
  * @param newMessage - content of the new node
  */
-export const postNewChatNode = createAsyncThunk(
-  'chat/postNewChatNode',
-  async ({chatId, nodeId, newMessage}: { chatId: string; nodeId: string; newMessage: string }, {dispatch}) => {
+export const postNewMessageToConversation = createAsyncThunk(
+  'chat/postNewMessageToConversation',
+  async ({chatId, newMessage}: { chatId: string; newMessage: string }, {dispatch}) => {
     try {
-      const response = await axios.post<ChatNode>(`/chats/${chatId}`, {
-        currentNode: nodeId, //parentNode
+      const response = await axios.post<Conversation>(`/chats/${chatId}/conversation`, {
         content: newMessage,
       });
-      const createdChatNode = response.data;
+      const conversation = response.data;
+      const createdChatNode = conversation.mapping[conversation.currentNode];
 
-      const eventSource = new EventSource(`/chats/${chatId}/sse/node/${createdChatNode.id}`);
+      const eventSource = new EventSource(`/chats/${chatId}/conversation/${createdChatNode.id}/sse`);
 
       eventSource.onerror = (error) => {
         console.error(error);
@@ -116,9 +117,8 @@ export const postNewChatNode = createAsyncThunk(
         }
       };
 
-      const result = { chatId, newNode: createdChatNode };
       return {
-        result,
+        conversation,
         eventSource
       };
     } catch (error) {
@@ -126,7 +126,6 @@ export const postNewChatNode = createAsyncThunk(
     }
   }
 );
-
 
 export const deleteChat = createAsyncThunk(
   'chat/deleteChat',
@@ -166,20 +165,21 @@ export const chatSlice = createSlice({
   initialState,
   reducers: {
     resetSelectedChatStatus: (state) => {
-      state.selectedChatStatus = 'idle';
+      state.selectedConversationStatus = 'idle';
     },
     addChatNodeContent: (state, action: PayloadAction<{ chatId: string; nodeId: string; content: string }>) => {
+      // TODO: revisit this
       const { chatId, nodeId, content } = action.payload;
-      if (!state.selectedChat) {
+      if (!state.selectedConversation) {
         return;
       }
 
-      if (state.selectedChat.id !== chatId) {
+      if (state.selectedConversation.id !== chatId) {
         console.error('Chat id does not match the selected chat id');
         return;
       }
 
-      const node = state.selectedChat.mapping[nodeId];
+      const node = state.selectedConversation.mapping[nodeId];
       node.message.content.parts.push(content);
     },
   },
@@ -197,21 +197,23 @@ export const chatSlice = createSlice({
       .addCase(fetchChats.rejected, (state) => {
         state.chatsStatus = 'failed';
       })
-      .addCase(fetchChatById.pending, (state) => {
-        state.selectedChatStatus = 'loading';
+      .addCase(fetchConversationByChatId.pending, (state) => {
+        state.selectedConversationStatus = 'loading';
       })
-      .addCase(fetchChatById.fulfilled, (state, action) => {
-        state.selectedChatStatus = 'succeeded';
-        state.selectedChat = action.payload;
+      .addCase(fetchConversationByChatId.fulfilled, (state, action) => {
+        state.selectedConversationStatus = 'succeeded';
+        state.selectedConversation = action.payload;
       })
-      .addCase(fetchChatById.rejected, (state) => {
-        state.selectedChatStatus = 'failed';
+      .addCase(fetchConversationByChatId.rejected, (state) => {
+        state.selectedConversationStatus = 'failed';
       })
       .addCase(deleteChat.fulfilled, (state, action) => {
         delete state.chats[action.payload];
+        state.selectedConversation = null;
       })
       .addCase(deleteAllChats.fulfilled, (state) => {
         state.chats = {};
+        state.selectedConversation = null;
       })
       .addCase(updateChatTitle.fulfilled, (state, action) => {
         const {chatId, newTitle} = action.payload;
@@ -223,39 +225,29 @@ export const chatSlice = createSlice({
         const newChat = action.payload;
         state.chats[newChat.id] = newChat;
       })
-      .addCase(updateChatNodeMessageContent.fulfilled, (state, action) => {
+      .addCase(updateConversationMessageContent.fulfilled, (state, action) => {
         // TODO: test
-        const {chatId, updatedNode} = action.payload;
-        if (state.selectedChat) {
-          if (state.selectedChat.id !== chatId) {
+        const conversation = action.payload;
+        if (state.selectedConversation) {
+          if (state.selectedConversation.id !== conversation.id) {
             console.error('Chat id does not match the selected chat id');
             return;
           }
 
-          state.selectedChat.currentNode = updatedNode.id;
-
-          if (updatedNode.parent) {
-            state.selectedChat.mapping[updatedNode.parent].children = [updatedNode.id];
-          }
-          state.selectedChat.mapping[updatedNode.id] = updatedNode;
+          state.selectedConversation = conversation;
         }
       })
-      .addCase(postNewChatNode.fulfilled, (state, action) => {
+      .addCase(postNewMessageToConversation.fulfilled, (state, action) => {
         // TODO: test
-        const {chatId, newNode} = action.payload.result;
+        const { conversation } = action.payload;
 
-        if (state.selectedChat) {
-          if (state.selectedChat.id !== chatId) {
+        if (state.selectedConversation) {
+          if (state.selectedConversation.id !== conversation.id) {
             console.error('Chat id does not match the selected chat id');
             return;
           }
 
-          state.selectedChat.currentNode = newNode.id;
-
-          if (newNode.parent) {
-            state.selectedChat.mapping[newNode.parent].children.push(newNode.id);
-          }
-          state.selectedChat.mapping[newNode.id] = newNode;
+          state.selectedConversation = conversation;
         }
       })
   }
@@ -263,8 +255,8 @@ export const chatSlice = createSlice({
 
 export const selectChats = (state: RootState) => state.chat.chats;
 export const selectChatsStatus = (state: RootState) => state.chat.chatsStatus;
-export const selectSelectedChatStatus = (state: RootState) => state.chat.selectedChatStatus;
-export const selectSelectedChat = (state: RootState) => state.chat.selectedChat;
+export const selectSelectedConversationStatus = (state: RootState) => state.chat.selectedConversationStatus;
+export const selectSelectedConversation = (state: RootState) => state.chat.selectedConversation;
 
 export const selectSortedChats = createSelector(
   selectChats,

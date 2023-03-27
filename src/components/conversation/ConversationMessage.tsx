@@ -12,10 +12,11 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import MessageVersionControl, { MessageVersionControlProps } from './MessageVersionControl';
 import gptLogo from '../../logo.svg';
+import { Author } from "../../models";
 
 export interface MessageProps {
   id: string;
-  sender: 'user' | 'assistant';
+  sender: Author;
   text: string;
   onEdit?: (newText: string) => void;
   versionControl?: MessageVersionControlProps;
@@ -28,7 +29,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(text);
   const [hovered, setHovered] = useState(false);
-  const isUser = sender === 'user';
+  const isUser = sender === 'USER';
   const avatarPlaceholder = isUser ? 'U' : 'A';
 
   const handleSave = () => {

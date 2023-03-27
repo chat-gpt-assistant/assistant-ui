@@ -8,7 +8,7 @@ import {
   deleteAllChats,
   deleteChat,
   fetchChats,
-  selectChatsStatus, selectSelectedChat,
+  selectChatsStatus, selectSelectedConversation,
   selectSortedChats, updateChatTitle
 } from '../../features/chat/chatSlice';
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
@@ -17,7 +17,7 @@ const SidePanel: React.FC = () => {
   const dispatch = useAppDispatch();
   const chats = useAppSelector(selectSortedChats);
   const chatsStatus = useAppSelector(selectChatsStatus);
-  const selectedChat = useAppSelector(selectSelectedChat);
+  const selectedChat = useAppSelector(selectSelectedConversation);
 
   const handleUpdateChatTitle = (chatId: string, newTitle: string) => {
     dispatch(updateChatTitle({chatId, newTitle}));
