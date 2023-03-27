@@ -180,7 +180,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
       height="100%"
       width="100%"
       overflow="auto"
-      paddingBottom={20}
+      paddingBottom={17}
       bgcolor="grey.300"
     >
       <Typography variant="h6" m={1}>
