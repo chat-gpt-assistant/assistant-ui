@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { ChatNode, Conversation, Message } from "../../models";
 import ConversationMessage from "./ConversationMessage";
+import AutoScrollComponent from "../AutoScrollComponent";
 
 interface ConversationHistoryProps {
   conversation: Conversation;
@@ -186,27 +187,30 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
         {conversation.title}
       </Typography>
 
-      <Box flexGrow={1}>
-        {messages.map((message) => {
-          const versions = getVersions(message);
+      <AutoScrollComponent>
+        <Box flexGrow={1}>
+          {messages.map((message) => {
+            const versions = getVersions(message);
 
-          return (
-            <ConversationMessage
-              key={message.id}
-              id={message.id}
-              sender={message.author}
-              text={message.content.parts.join()}
-              onEdit={(newText) => onEditMessage(message.id, newText)}
-              versionControl={{
-                onPreviousVersion: () => onPreviousVersion(getNextSiblingId(message.id, -1)),
-                onNextVersion: () => onNextVersion(getNextSiblingId(message.id, 1)),
-                totalVersions: versions[1],
-                currentVersion: versions[0],
-              }}
-            />
-          );
-        })}
-      </Box>
+            return (
+              <ConversationMessage
+                key={message.id}
+                id={message.id}
+                sender={message.author}
+                text={message.content.parts.join()}
+                onEdit={(newText) => onEditMessage(message.id, newText)}
+                versionControl={{
+                  onPreviousVersion: () => onPreviousVersion(getNextSiblingId(message.id, -1)),
+                  onNextVersion: () => onNextVersion(getNextSiblingId(message.id, 1)),
+                  totalVersions: versions[1],
+                  currentVersion: versions[0],
+                }}
+              />
+            );
+          })}
+        </Box>
+      </AutoScrollComponent>
+
     </Box>
   );
 };
