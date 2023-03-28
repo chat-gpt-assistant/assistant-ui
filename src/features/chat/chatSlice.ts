@@ -82,7 +82,7 @@ export const updateConversationMessageContent = createAsyncThunk(
 );
 
 // TODO: review this
-export const addChatNodeContent = createAction<{ chatId: string; nodeId: string; content: string }>(
+export const addChatNodeContent = createAction<{ conversation: Conversation }>(
   'chat/addChatNodeContent'
 );
 
@@ -95,34 +95,10 @@ export const addChatNodeContent = createAction<{ chatId: string; nodeId: string;
 export const postNewMessageToConversation = createAsyncThunk(
   'chat/postNewMessageToConversation',
   async ({chatId, newMessage}: { chatId: string; newMessage: string }, {dispatch}) => {
-    try {
-      const response = await axios.post<Conversation>(`/chats/${chatId}/conversation`, {
-        content: newMessage,
-      });
-      const conversation = response.data;
-      const createdChatNode = conversation.mapping[conversation.currentNode];
-
-      const eventSource = new EventSource(`/chats/${chatId}/conversation/${createdChatNode.id}/sse`);
-
-      eventSource.onerror = (error) => {
-        console.error(error);
-      };
-
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'content-update') {
-          const { chatId, nodeId, content } = data.payload;
-          dispatch(addChatNodeContent({ chatId, nodeId, content }));
-        }
-      };
-
-      return {
-        conversation,
-        eventSource
-      };
-    } catch (error) {
-      throw new Error('Failed to post new chat node');
-    }
+    const response = await axios.post<Conversation>(`/chats/${chatId}/conversation`, {
+      content: newMessage,
+    });
+    return response.data;
   }
 );
 
@@ -159,6 +135,22 @@ export const createChat = createAsyncThunk(
   }
 );
 
+function updateStateWithConversationDiff(state: ChatState, conversation: Conversation) {
+  if (!state.selectedConversation) {
+    return;
+  }
+
+  if (state.selectedConversation.id !== conversation.id) {
+    console.error('Chat id does not match the selected chat id');
+    return;
+  }
+
+  state.selectedConversation.currentNode = conversation.currentNode;
+  Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
+    state.selectedConversation!.mapping[nodeId] = node;
+  });
+}
+
 export const chatSlice = createSlice({
   name: 'chat',
   initialState,
@@ -166,20 +158,10 @@ export const chatSlice = createSlice({
     resetSelectedChatStatus: (state) => {
       state.selectedConversationStatus = 'idle';
     },
-    addChatNodeContent: (state, action: PayloadAction<{ chatId: string; nodeId: string; content: string }>) => {
-      // TODO: revisit this
-      const { chatId, nodeId, content } = action.payload;
-      if (!state.selectedConversation) {
-        return;
-      }
+    addChatNodeContent: (state, action: PayloadAction<Conversation>) => {
+      const conversation = action.payload;
 
-      if (state.selectedConversation.id !== chatId) {
-        console.error('Chat id does not match the selected chat id');
-        return;
-      }
-
-      const node = state.selectedConversation.mapping[nodeId];
-      node.message.content.parts.push(content);
+      updateStateWithConversationDiff(state, conversation);
     },
   },
   extraReducers: (builder) => {
@@ -227,33 +209,13 @@ export const chatSlice = createSlice({
       .addCase(updateConversationMessageContent.fulfilled, (state, action) => {
         // TODO: test
         const conversation = action.payload;
-        if (state.selectedConversation) {
-          if (state.selectedConversation.id !== conversation.id) {
-            console.error('Chat id does not match the selected chat id');
-            return;
-          }
 
-          state.selectedConversation.currentNode = conversation.currentNode;
-          Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
-            state.selectedConversation!.mapping[nodeId] = node;
-          });
-        }
+        updateStateWithConversationDiff(state, conversation);
       })
       .addCase(postNewMessageToConversation.fulfilled, (state, action) => {
-        // TODO: test
-        const { conversation } = action.payload;
+        const conversation = action.payload;
 
-        if (state.selectedConversation) {
-          if (state.selectedConversation.id !== conversation.id) {
-            console.error('Chat id does not match the selected chat id');
-            return;
-          }
-
-          state.selectedConversation.currentNode = conversation.currentNode;
-          Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
-            state.selectedConversation!.mapping[nodeId] = node;
-          });
-        }
+        updateStateWithConversationDiff(state, conversation);
       })
   }
 });

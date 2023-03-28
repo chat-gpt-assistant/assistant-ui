@@ -66,7 +66,6 @@ function buildConversationHistoryUp(nodesSupplier: (nodeId: string) => ChatNode 
 }
 
 
-// TODO: test this function
 function createNodeSupplier(
   nodesMapping: { [p: string]: ChatNode },
   fetcher: (missingNodeId: string) => boolean
@@ -122,11 +121,9 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
       // 1. find out the direction
       // 2. fetch the missing nodes
 
-
       return true;
     }
   );
-  const messages = buildConversationHistory(conversation, nodesSupplier);
 
   const getVersions = (message: Message) => {
     const chatNode = nodesSupplier(message.id);
@@ -173,6 +170,8 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     }
   };
 
+  const messages = buildConversationHistory(conversation, nodesSupplier);
+
   return (
     <Box
       display="flex"
@@ -197,7 +196,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 key={message.id}
                 id={message.id}
                 sender={message.author}
-                text={message.content.parts.join()}
+                text={message.content.parts.join("")}
                 onEdit={(newText) => onEditMessage(message.id, newText)}
                 versionControl={{
                   onPreviousVersion: () => onPreviousVersion(getNextSiblingId(message.id, -1)),

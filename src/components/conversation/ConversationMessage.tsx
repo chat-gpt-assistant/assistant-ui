@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
@@ -29,6 +29,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   const isLgScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
   const [isEditing, setIsEditing] = useState(false);
+  const [originalText, setOriginalText] = useState(text);
   const [editedText, setEditedText] = useState(text);
   const [hovered, setHovered] = useState(false);
   const isUser = sender === 'USER';
@@ -37,10 +38,10 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   const handleSave = () => {
     onEdit?.(editedText);
     setIsEditing(false);
-
   };
+
   const handleCancel = () => {
-    setEditedText(text);
+    setEditedText(originalText);
     setIsEditing(false);
   };
 
@@ -58,10 +59,26 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
     }
   };
 
+  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedText(e.target.value);
+  };
+
+  const onEditClick = () => {
+    setOriginalText(editedText);
+    setIsEditing(!isEditing);
+  }
+
+  useEffect(() => {
+    setEditedText(text);
+    setOriginalText(text);
+  }, [text]);
+
   const messageContent = (
-    <ReactMarkdown children={editedText}
-                   remarkPlugins={[remarkGfm]}
-                   rehypePlugins={[rehypeHighlight]}/>
+    <>
+      <ReactMarkdown children={editedText}
+                     remarkPlugins={[remarkGfm]}
+                     rehypePlugins={[rehypeHighlight]}/>
+    </>
   );
 
   const editContent = (
@@ -69,7 +86,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
       <form onSubmit={handleFormSubmit}>
         <TextareaAutosize
           value={editedText}
-          onChange={(e) => setEditedText(e.target.value)}
+          onChange={onChange}
           onKeyDown={handleKeyDown}
           minRows={2}
           style={{
@@ -150,7 +167,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
         <Box width={30} minWidth={30}>
           {(onEdit && isUser && !isEditing && hovered) && (
             <IconButton
-              onClick={() => setIsEditing(!isEditing)}
+              onClick={onEditClick}
               size="small"
               color="inherit"
             >

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Alert, Box } from '@mui/material';
 import ConversationHistory from './ConversationHistory';
 import InputPanel from './InputPanel';
@@ -12,16 +12,14 @@ import {
   selectSelectedConversationStatus,
   updateConversationMessageContent
 } from "../../features/chat/chatSlice";
+import { sseStart, sseStop } from "../../features/sse/sseSlice";
 
 const Conversation: React.FC = () => {
-  const {id} = useParams();
-
   const dispatch = useAppDispatch();
   const selectedConversationStatus = useAppSelector(selectSelectedConversationStatus);
   const selectedConversation = useAppSelector(selectSelectedConversation);
 
-  const [eventSource, setEventSource] = useState<EventSource | null>(null);
-
+  const {id} = useParams();
 
   const handleEditMessage = (messageId: string, newText: string) => {
     dispatch(updateConversationMessageContent({chatId: id!, nodeId: messageId, newContent: newText}));
@@ -31,10 +29,7 @@ const Conversation: React.FC = () => {
     dispatch(postNewMessageToConversation({
       chatId: id!,
       newMessage: message
-    })).unwrap()
-      .then((result) => {
-        setEventSource(result.eventSource);
-      });
+    }));
   }
 
   const handlePreviousVersion = (prevMessageId: string) => {
@@ -59,7 +54,7 @@ const Conversation: React.FC = () => {
 
   const handleStopGenerating = () => {
     // TODO: implement logic for stopping the generation of messages
-    eventSource?.close();
+    // dispatch(sseStop());
   };
 
   const handleRegenerateResponse = () => {
@@ -70,6 +65,18 @@ const Conversation: React.FC = () => {
   useEffect(() => {
     dispatch(resetSelectedChatStatus());
   }, [id, dispatch]);
+
+  useEffect(() => {
+    if (!id) {
+      return
+    }
+
+    dispatch(sseStart({ id }));
+
+    return () => {
+      dispatch(sseStop());
+    }
+  }, [dispatch, id]);
 
   useEffect(() => {
     if (id && selectedConversationStatus === 'idle') {
