@@ -38,4 +38,5 @@ export type Author = "ASSISTANT" | "USER";
 export interface Content {
   type: string;
   parts: string[];
+  final: boolean;
 }

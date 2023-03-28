@@ -8,6 +8,7 @@ import {
   fetchConversationByChatId,
   postNewMessageToConversation,
   resetSelectedChatStatus,
+  selectIsAssistantResponding,
   selectSelectedConversation,
   selectSelectedConversationStatus,
   updateConversationMessageContent
@@ -18,6 +19,7 @@ const Conversation: React.FC = () => {
   const dispatch = useAppDispatch();
   const selectedConversationStatus = useAppSelector(selectSelectedConversationStatus);
   const selectedConversation = useAppSelector(selectSelectedConversation);
+  const isAssistantResponding = useAppSelector(selectIsAssistantResponding);
 
   const {id} = useParams();
 
@@ -105,7 +107,8 @@ const Conversation: React.FC = () => {
         zIndex: 1,
         background: 'linear-gradient(rgba(238, 238, 238, 0), rgba(238, 238, 238, 0.8))',
       }}>
-        <InputPanel onSubmitMessage={handleSubmittedMessage}
+        <InputPanel isAssistantResponding={isAssistantResponding}
+                    onSubmitMessage={handleSubmittedMessage}
                     onStopGenerating={handleStopGenerating}
                     onRegenerateResponse={handleRegenerateResponse}/>
       </Box>

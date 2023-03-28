@@ -3,11 +3,14 @@ import { Chat, Conversation } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
 
+export type LoadingStatus = 'idle' | 'loading' | 'succeeded' | 'failed';
+
 interface ChatState {
   chats: { [id: string]: Chat };
   selectedConversation: Conversation | null;
-  chatsStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
-  selectedConversationStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  chatsStatus: LoadingStatus;
+  selectedConversationStatus: LoadingStatus;
+  isAssistantResponding: boolean;
 }
 
 const initialState: ChatState = {
@@ -15,6 +18,7 @@ const initialState: ChatState = {
   selectedConversation: null,
   chatsStatus: 'idle',
   selectedConversationStatus: 'idle',
+  isAssistantResponding: false,
 };
 
 /**
@@ -145,6 +149,8 @@ function updateStateWithConversationDiff(state: ChatState, conversation: Convers
     return;
   }
 
+  state.isAssistantResponding = true;
+
   state.selectedConversation.currentNode = conversation.currentNode;
   Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
     state.selectedConversation!.mapping[nodeId] = node;
@@ -162,6 +168,12 @@ export const chatSlice = createSlice({
       const conversation = action.payload;
 
       updateStateWithConversationDiff(state, conversation);
+
+      const currentNodeId = conversation.currentNode;
+      const currentNode = conversation.mapping[currentNodeId];
+      if (currentNode && currentNode.message.content.final) {
+        state.isAssistantResponding = false;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -206,11 +218,17 @@ export const chatSlice = createSlice({
         const newChat = action.payload;
         state.chats[newChat.id] = newChat;
       })
+      .addCase(updateConversationMessageContent.pending , (state, action) => {
+        state.isAssistantResponding = true;
+      })
       .addCase(updateConversationMessageContent.fulfilled, (state, action) => {
         // TODO: test
         const conversation = action.payload;
 
         updateStateWithConversationDiff(state, conversation);
+      })
+      .addCase(postNewMessageToConversation.pending , (state, action) => {
+        state.isAssistantResponding = true;
       })
       .addCase(postNewMessageToConversation.fulfilled, (state, action) => {
         const conversation = action.payload;
@@ -223,6 +241,7 @@ export const chatSlice = createSlice({
 export const selectChats = (state: RootState) => state.chat.chats;
 export const selectChatsStatus = (state: RootState) => state.chat.chatsStatus;
 export const selectSelectedConversationStatus = (state: RootState) => state.chat.selectedConversationStatus;
+export const selectIsAssistantResponding = (state: RootState) => state.chat.isAssistantResponding;
 export const selectSelectedConversation = (state: RootState) => state.chat.selectedConversation;
 
 export const selectSortedChats = createSelector(

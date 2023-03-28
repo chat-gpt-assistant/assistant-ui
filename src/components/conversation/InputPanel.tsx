@@ -5,13 +5,13 @@ import SendIcon from '@mui/icons-material/Send';
 import ResponseControl from './ResponseControl';
 
 interface InputPanelProps {
+  isAssistantResponding: boolean;
   onSubmitMessage: (text: string) => void;
   onStopGenerating: () => void;
   onRegenerateResponse: () => void;
 }
 
-const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
-  const [isAssistantResponding, setIsAssistantResponding] = useState(false);
+const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
   const [text, setText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -34,12 +34,12 @@ const InputPanel: React.FC<InputPanelProps> = ({onSubmitMessage, onStopGeneratin
 
   const handleStopGenerating = () => {
     onStopGenerating();
-    setIsAssistantResponding(false);
+    // setIsAssistantResponding(false);
   };
 
   const handleRegenerateResponse = () => {
     onRegenerateResponse();
-    setIsAssistantResponding(true);
+    // setIsAssistantResponding(true);
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
