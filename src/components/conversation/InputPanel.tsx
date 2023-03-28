@@ -34,12 +34,10 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
 
   const handleStopGenerating = () => {
     onStopGenerating();
-    // setIsAssistantResponding(false);
   };
 
   const handleRegenerateResponse = () => {
     onRegenerateResponse();
-    // setIsAssistantResponding(true);
   };
 
   const handleTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
