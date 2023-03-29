@@ -13,13 +13,14 @@ import {
   selectSelectedConversationStatus,
   updateConversationMessageContent
 } from "../../features/chat/chatSlice";
-import { sseStart, sseStop } from "../../features/sse/sseSlice";
+import { selectConnected, sseStart, sseStop } from "../../features/sse/sseSlice";
 
 const Conversation: React.FC = () => {
   const dispatch = useAppDispatch();
   const selectedConversationStatus = useAppSelector(selectSelectedConversationStatus);
   const selectedConversation = useAppSelector(selectSelectedConversation);
   const isAssistantResponding = useAppSelector(selectIsAssistantResponding);
+  const sseConnected = useAppSelector(selectConnected);
 
   const {id} = useParams();
 
@@ -69,7 +70,7 @@ const Conversation: React.FC = () => {
   }, [id, dispatch]);
 
   useEffect(() => {
-    if (!id) {
+    if (!id || sseConnected) {
       return
     }
 

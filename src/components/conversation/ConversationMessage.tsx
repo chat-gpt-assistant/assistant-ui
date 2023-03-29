@@ -75,7 +75,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
 
   const messageContent = (
     <>
-      <ReactMarkdown children={editedText}
+      <ReactMarkdown children={editedText || '...'}
                      remarkPlugins={[remarkGfm]}
                      rehypePlugins={[rehypeHighlight]}/>
     </>

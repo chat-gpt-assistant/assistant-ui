@@ -1,9 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { RootState } from "../../app/store";
 
 interface SseState {
   connected: boolean;
   chatId?: string;
-  error?: Error;
+  error?: string;
 }
 
 const initialState: SseState = {
@@ -24,7 +25,7 @@ export const sseSlice = createSlice({
     //   state.messages.push(action.payload);
     // },
     sseError: (state, action) => {
-      state.error = action.payload.error;
+      state.error = action.payload.error.toString();
     },
     sseStop: (state) => state,
     sseDisconnected: (state) => {
@@ -40,5 +41,7 @@ export const {
   sseStop,
   sseDisconnected,
 } = sseSlice.actions;
+
+export const selectConnected = (state: RootState) => state.sse.connected;
 
 export default sseSlice.reducer;

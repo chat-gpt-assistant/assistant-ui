@@ -85,7 +85,6 @@ export const updateConversationMessageContent = createAsyncThunk(
   }
 );
 
-// TODO: review this
 export const addChatNodeContent = createAction<{ conversation: Conversation }>(
   'chat/addChatNodeContent'
 );
