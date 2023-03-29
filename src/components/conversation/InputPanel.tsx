@@ -3,6 +3,7 @@ import { Box, IconButton, TextareaAutosize, CircularProgress } from '@mui/materi
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import ResponseControl from './ResponseControl';
+import { transcriptAudio } from "../../app/audio";
 
 interface InputPanelProps {
   isAssistantResponding: boolean;
@@ -24,10 +25,13 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
         recordedChunks.push(event.data);
       });
       mediaRecorder.addEventListener('stop', () => {
-        const recordedBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
         const audioURL = window.URL.createObjectURL(recordedBlob);
-        const audio = new Audio(audioURL);
-        audio.play();
+        // const audio = new Audio(audioURL);
+        // audio.play();
+        transcriptAudio(recordedBlob).then(() => {
+          console.log('Audio uploaded successfully');
+        });
       });
     }
   }, [mediaRecorder]);
@@ -68,7 +72,7 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
       setMediaRecorder(mediaRecorder);
       mediaRecorder.start();
     } catch (error) {

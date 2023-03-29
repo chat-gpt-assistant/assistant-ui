@@ -82,7 +82,7 @@ const Conversation: React.FC = () => {
 
   useEffect(() => {
     if (id && selectedConversationStatus === 'idle') {
-      dispatch(fetchConversationByChatId({chatId: id, upperLimit: 10, lowerLimit: 10}));
+      dispatch(fetchConversationByChatId({chatId: id, upperLimit: 100, lowerLimit: 100}));
     }
   }, [selectedConversationStatus, dispatch, id]);
 
