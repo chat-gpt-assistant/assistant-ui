@@ -27,7 +27,8 @@ export const sseSlice = createSlice({
     sseError: (state, action) => {
       state.error = action.payload.error.toString();
     },
-    sseStop: (state) => state,
+    sseStop: (state) => {
+    },
     sseDisconnected: (state) => {
       state.connected = false;
     },

@@ -35,6 +35,8 @@ const InputPanel: React.FC<InputPanelProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
+
+
   useEffect(() => {
     const mediaRecorder = mediaRecorderRef.current;
     return () => {
@@ -154,7 +156,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
               replyWithSpeech ? (
                 <RecordVoiceOverIcon color="primary" />
               ) : (
-                <VoiceOverOffIcon color="error" />
+                <VoiceOverOffIcon color="disabled" />
               )
             }
 

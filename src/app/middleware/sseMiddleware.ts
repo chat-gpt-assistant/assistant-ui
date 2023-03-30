@@ -18,7 +18,7 @@ export const sseMiddleware: Middleware = (store) => (next) => (action) => {
       eventSource.close();
     }
 
-    const { id } = action.payload;
+    const {id} = action.payload;
 
     eventSource = new EventSource(`${host}/api/v1/chats/${id}/conversation/sse`);
 

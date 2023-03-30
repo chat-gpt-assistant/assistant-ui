@@ -70,7 +70,7 @@ const Conversation: React.FC = () => {
   }, [id, dispatch]);
 
   useEffect(() => {
-    if (!id || sseConnected) {
+    if (!id) {
       return
     }
 

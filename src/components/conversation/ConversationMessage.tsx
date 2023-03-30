@@ -15,6 +15,9 @@ import { Author } from "../../models";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from "rehype-highlight";
+import { useSpeechSynthesis } from "../../app/hooks/useSpeechSynthesis";
+import RecordVoiceOverIcon from "@mui/icons-material/RecordVoiceOver";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 export interface MessageProps {
   id: string;
@@ -34,6 +37,8 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   const [hovered, setHovered] = useState(false);
   const isUser = sender === 'USER';
   const avatarPlaceholder = isUser ? 'U' : 'A';
+
+  const { isSpeaking, speak, stopSpeaking } = useSpeechSynthesis();
 
   const handleSave = () => {
     onEdit?.(editedText);
@@ -164,12 +169,38 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
           {isEditing ? editContent : messageContent}
         </Box>
 
+        { hovered && (
+          <Box>
+            {isSpeaking ? (
+              <IconButton color="error"
+                          size="small"
+                          sx={{
+
+                          }}
+                          onClick={() => stopSpeaking()}
+              >
+                <CancelIcon/>
+              </IconButton>
+            ) : (
+              <IconButton color="primary"
+                          size="small"
+                          sx={{
+
+                          }}
+                          onClick={() => speak(editedText, 'en-US')}
+              >
+                <RecordVoiceOverIcon/>
+              </IconButton>
+            )}
+          </Box>
+        )}
+
         <Box width={30} minWidth={30}>
           {(onEdit && isUser && !isEditing && hovered) && (
             <IconButton
               onClick={onEditClick}
               size="small"
-              color="inherit"
+              color="primary"
             >
               <EditIcon fontSize="inherit"/>
             </IconButton>
