@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { ChatNode, Conversation, Message } from "../../models";
 import ConversationMessage from "./ConversationMessage";
@@ -114,7 +114,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                                                                    onPreviousVersion,
                                                                    onNextVersion
                                                                  }) => {
-  const nodesSupplier = createNodeSupplier(
+  const nodesSupplier = useMemo(() => createNodeSupplier(
     conversation.mapping,
     (missingNodeId: string) => {
       // TODO: try to fetch the missing nodes up or down
@@ -123,7 +123,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
       return true;
     }
-  );
+  ), [conversation.mapping]);
 
   const getVersions = (message: Message) => {
     const chatNode = nodesSupplier(message.id);
@@ -170,7 +170,10 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     }
   };
 
-  const messages = buildConversationHistory(conversation, nodesSupplier);
+  // TODO: test
+  const messages = useMemo(
+    () => buildConversationHistory(conversation, nodesSupplier),
+    [conversation, nodesSupplier]);
 
   return (
     <Box

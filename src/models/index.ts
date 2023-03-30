@@ -40,3 +40,9 @@ export interface Content {
   parts: string[];
   final: boolean;
 }
+
+export interface AudioTranscription {
+  text: string,
+  language?: string,
+  duration?: number,
+}

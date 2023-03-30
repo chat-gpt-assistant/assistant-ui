@@ -1,6 +1,7 @@
 import axios from '../axiosInstance';
+import { AudioTranscription } from "../models";
 
-export async function transcriptAudio(audioFile: Blob) {
+export async function transcriptAudio(audioFile: Blob): Promise<AudioTranscription> {
   const formData = new FormData();
   formData.append('audio', audioFile);
 
@@ -10,8 +11,9 @@ export async function transcriptAudio(audioFile: Blob) {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log(response.data);
+    return response.data;
   } catch (error) {
     console.error('Error uploading audio:', error);
+    return Promise.reject(error);
   }
 }

@@ -87,6 +87,10 @@ const Conversation: React.FC = () => {
     }
   }, [selectedConversationStatus, dispatch, id]);
 
+  if (!id) {
+    return null;
+  }
+
   return (
     <Box display="flex" flexDirection="column" height="100vh" bgcolor="grey.200" position="relative">
       <Box flexGrow={1} overflow="auto">
@@ -108,7 +112,8 @@ const Conversation: React.FC = () => {
         zIndex: 1,
         background: 'linear-gradient(rgba(238, 238, 238, 0), rgba(238, 238, 238, 0.8))',
       }}>
-        <InputPanel isAssistantResponding={isAssistantResponding}
+        <InputPanel chatId={id}
+                    isAssistantResponding={isAssistantResponding}
                     onSubmitMessage={handleSubmittedMessage}
                     onStopGenerating={handleStopGenerating}
                     onRegenerateResponse={handleRegenerateResponse}/>

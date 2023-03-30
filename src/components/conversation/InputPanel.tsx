@@ -1,40 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { Box, IconButton, TextareaAutosize, CircularProgress } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, CircularProgress, IconButton, TextareaAutosize } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
 import ResponseControl from './ResponseControl';
 import { transcriptAudio } from "../../app/audio";
 
 interface InputPanelProps {
+  chatId: string;
   isAssistantResponding: boolean;
   onSubmitMessage: (text: string) => void;
   onStopGenerating: () => void;
   onRegenerateResponse: () => void;
 }
 
-const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
+const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
   const [text, setText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isTranscripting, setIsTranscripting] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    const recordedChunks: Blob[] = [];
+    const mediaRecorder = mediaRecorderRef.current;
+    return () => {
+      if (mediaRecorder) {
+        if (mediaRecorder?.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        mediaRecorderRef.current = null;
+      }
 
-    if (mediaRecorder) {
-      mediaRecorder.addEventListener('dataavailable', (event) => {
-        recordedChunks.push(event.data);
-      });
-      mediaRecorder.addEventListener('stop', () => {
-        const recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
-        const audioURL = window.URL.createObjectURL(recordedBlob);
-        // const audio = new Audio(audioURL);
-        // audio.play();
-        transcriptAudio(recordedBlob).then(() => {
-          console.log('Audio uploaded successfully');
-        });
-      });
+      setIsRecording(false);
+      setIsTranscripting(false);
+      setText('');
     }
-  }, [mediaRecorder]);
+  }, [chatId]);
 
   const handleStopGenerating = () => {
     onStopGenerating();
@@ -63,6 +63,32 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
     }
   };
 
+  const setupMediaRecorder = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    const mediaRecorder = new MediaRecorder(stream, {mimeType: 'audio/webm;codecs=opus'});
+
+    let recordedChunks: Blob[] = [];
+    mediaRecorder.addEventListener('dataavailable', (event) => {
+      recordedChunks.push(event.data);
+    });
+    mediaRecorder.addEventListener('stop', () => {
+      const recordedBlob = new Blob(recordedChunks, {type: mediaRecorder.mimeType});
+
+      setIsTranscripting(true);
+
+      // TODO: more to slice and remove chatId prop
+      transcriptAudio(recordedBlob).then((transcription) => {
+        setText(transcription.text);
+        textAreaRef.current?.focus();
+      }).finally(() => {
+        setIsTranscripting(false);
+        recordedChunks = [];
+      });
+    });
+
+    return mediaRecorder;
+  }
+
   const handleMicDown = async () => {
     if (isRecording) {
       return handleMicUp();
@@ -71,10 +97,8 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
     setIsRecording(true);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-      setMediaRecorder(mediaRecorder);
-      mediaRecorder.start();
+      mediaRecorderRef.current = await setupMediaRecorder();
+      mediaRecorderRef.current.start();
     } catch (error) {
       console.error('Error accessing the microphone:', error);
       setIsRecording(false);
@@ -82,9 +106,9 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
   };
 
   const handleMicUp = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      setMediaRecorder(null);
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
       setIsRecording(false);
     }
   };
@@ -125,10 +149,15 @@ const InputPanel: React.FC<InputPanelProps> = ({isAssistantResponding, onSubmitM
                         onMouseDown={handleMicDown}
                         onMouseUp={handleMicUp}
             >
-              <MicIcon/>
+              {isTranscripting ? (
+                <CircularProgress size={24}/>
+              ) : (
+                <MicIcon/>
+              )}
             </IconButton>
 
             <TextareaAutosize
+              ref={textAreaRef}
               minRows={1}
               maxRows={8}
               autoFocus={true}
