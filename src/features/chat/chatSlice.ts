@@ -77,16 +77,11 @@ export const fetchConversationByChatId = createAsyncThunk(
 export const updateConversationMessageContent = createAsyncThunk(
   'chat/updateConversationMessageContent',
   async ({chatId, nodeId, newContent}: { chatId: string; nodeId: string; newContent: string }) => {
-    const response = await axios.patch<Conversation>(`/chats/${chatId}/conversation`, {
-      currentNode: nodeId,
+    const response = await axios.patch<Conversation>(`/chats/${chatId}/conversation/${nodeId}`, {
       content: newContent
     });
     return response.data;
   }
-);
-
-export const addChatNodeContent = createAction<{ conversation: Conversation }>(
-  'chat/addChatNodeContent'
 );
 
 /**
@@ -251,6 +246,6 @@ export const selectSortedChats = createSelector(
   }
 );
 
-export const {resetSelectedChatStatus} = chatSlice.actions;
+export const {resetSelectedChatStatus, addChatNodeContent} = chatSlice.actions;
 
 export default chatSlice.reducer;
