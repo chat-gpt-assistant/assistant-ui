@@ -26,7 +26,11 @@ const ResponseControl: React.FC<ResponseControlProps> = ({
   };
 
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+    <Box display="flex"
+         justifyContent="center"
+         flexGrow={1}
+         my={1}
+    >
       <Button variant="contained" color="primary" onClick={handleClick} startIcon={buttonIcon}>
         {buttonText}
       </Button>

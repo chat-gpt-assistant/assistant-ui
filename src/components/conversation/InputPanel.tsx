@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, CircularProgress, IconButton, TextareaAutosize } from '@mui/material';
+import {
+  Box,
+  CircularProgress,
+  IconButton,
+  Switch,
+  TextareaAutosize
+} from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
 import SendIcon from '@mui/icons-material/Send';
+import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
+import VoiceOverOffIcon from '@mui/icons-material/VoiceOverOff';
 import ResponseControl from './ResponseControl';
 import { transcriptAudio } from "../../app/audio";
 
@@ -13,10 +21,17 @@ interface InputPanelProps {
   onRegenerateResponse: () => void;
 }
 
-const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, onSubmitMessage, onStopGenerating, onRegenerateResponse}) => {
+const InputPanel: React.FC<InputPanelProps> = ({
+                                                 chatId,
+                                                 isAssistantResponding,
+                                                 onSubmitMessage,
+                                                 onStopGenerating,
+                                                 onRegenerateResponse
+                                               }) => {
   const [text, setText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscripting, setIsTranscripting] = useState(false);
+  const [transcripting, setTranscripting] = useState(false);
+  const [replyWithSpeech, setReplyWithSpeech] = useState(true);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -31,7 +46,7 @@ const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, o
       }
 
       setIsRecording(false);
-      setIsTranscripting(false);
+      setTranscripting(false);
       setText('');
     }
   }, [chatId]);
@@ -74,14 +89,14 @@ const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, o
     mediaRecorder.addEventListener('stop', () => {
       const recordedBlob = new Blob(recordedChunks, {type: mediaRecorder.mimeType});
 
-      setIsTranscripting(true);
+      setTranscripting(true);
 
       // TODO: more to slice and remove chatId prop
       transcriptAudio(recordedBlob).then((transcription) => {
         setText(transcription.text);
         textAreaRef.current?.focus();
       }).finally(() => {
-        setIsTranscripting(false);
+        setTranscripting(false);
         recordedChunks = [];
       });
     });
@@ -113,6 +128,10 @@ const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, o
     }
   };
 
+  const handleReplyWithSpeechChange = () => {
+    setReplyWithSpeech(!replyWithSpeech);
+  };
+
   return (
     <Box
       p={1}
@@ -122,11 +141,31 @@ const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, o
       maxWidth="md"
     >
       <Box display="flex" flexDirection="column" gap={2} flexGrow={1}>
-        <ResponseControl
-          isAssistantResponding={isAssistantResponding}
-          onStopGenerating={handleStopGenerating}
-          onRegenerateResponse={handleRegenerateResponse}
-        />
+        <Box display="flex" flexDirection="row">
+          <Box display="flex" alignSelf="flex-end">
+            <Switch
+              checked={replyWithSpeech}
+              onChange={handleReplyWithSpeechChange}
+              color="primary"
+              size="small"
+            />
+
+            {
+              replyWithSpeech ? (
+                <RecordVoiceOverIcon color="primary" />
+              ) : (
+                <VoiceOverOffIcon color="error" />
+              )
+            }
+
+          </Box>
+
+          <ResponseControl
+            isAssistantResponding={isAssistantResponding}
+            onStopGenerating={handleStopGenerating}
+            onRegenerateResponse={handleRegenerateResponse}
+          />
+        </Box>
 
         <form onSubmit={handleSubmit}>
           <Box
@@ -149,7 +188,7 @@ const InputPanel: React.FC<InputPanelProps> = ({chatId, isAssistantResponding, o
                         onMouseDown={handleMicDown}
                         onMouseUp={handleMicUp}
             >
-              {isTranscripting ? (
+              {transcripting ? (
                 <CircularProgress size={24}/>
               ) : (
                 <MicIcon/>
