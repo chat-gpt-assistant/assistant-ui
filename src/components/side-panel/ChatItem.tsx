@@ -39,7 +39,6 @@ const ChatItem: React.FC<ChatItemProps> = ({id, title, active, onEdit, onDelete}
     setIsEditing(false);
   };
 
-
   return (
     <Box display="flex"
          alignItems="center"

@@ -1,4 +1,4 @@
-import { createAction, createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Chat, Conversation } from "../../models";
 import axios from '../../axiosInstance';
 import { RootState } from "../../app/store";
@@ -7,18 +7,20 @@ export type LoadingStatus = 'idle' | 'loading' | 'succeeded' | 'failed';
 
 interface ChatState {
   chats: { [id: string]: Chat };
-  selectedConversation: Conversation | null;
   chatsStatus: LoadingStatus;
+  selectedConversation: Conversation | null;
   selectedConversationStatus: LoadingStatus;
   isAssistantResponding: boolean;
+  autoReplyWithSpeech: boolean;
 }
 
 const initialState: ChatState = {
   chats: {},
-  selectedConversation: null,
   chatsStatus: 'idle',
+  selectedConversation: null,
   selectedConversationStatus: 'idle',
   isAssistantResponding: false,
+  autoReplyWithSpeech: true,
 };
 
 /**
@@ -77,8 +79,12 @@ export const fetchConversationByChatId = createAsyncThunk(
 export const updateConversationMessageContent = createAsyncThunk(
   'chat/updateConversationMessageContent',
   async ({chatId, nodeId, newContent}: { chatId: string; nodeId: string; newContent: string }) => {
-    const response = await axios.patch<Conversation>(`/chats/${chatId}/conversation/${nodeId}`, {
+    const response = await axios.patch<Conversation>(`/chats/${chatId}/conversation`, {
       content: newContent
+    }, {
+      params: {
+        nodeId
+      }
     });
     return response.data;
   }
@@ -97,6 +103,21 @@ export const postNewMessageToConversation = createAsyncThunk(
       content: newMessage,
     });
     return response.data;
+  }
+);
+
+export const regenerateResponse = createAsyncThunk(
+  'chat/regenerateResponse',
+  async ({chatId}: { chatId: string; }) => {
+    const response = await axios.post<Conversation>(`/chats/${chatId}/conversation/regenerated-response`);
+    return response.data;
+  }
+);
+
+export const stopGenerating = createAsyncThunk(
+  'chat/stopGenerating',
+  async ({chatId}: { chatId: string; }) => {
+    await axios.post<void>(`/chats/${chatId}/conversation/stop-response-generating`);
   }
 );
 
@@ -143,9 +164,9 @@ function updateStateWithConversationDiff(state: ChatState, conversation: Convers
     return;
   }
 
-  state.isAssistantResponding = true;
-
   state.selectedConversation.currentNode = conversation.currentNode;
+  state.selectedConversation.title = conversation.title;
+
   Object.entries(conversation.mapping).forEach(([nodeId, node]) => {
     state.selectedConversation!.mapping[nodeId] = node;
   });
@@ -161,6 +182,7 @@ export const chatSlice = createSlice({
     addChatNodeContent: (state, action: PayloadAction<Conversation>) => {
       const conversation = action.payload;
 
+      state.isAssistantResponding = true;
       updateStateWithConversationDiff(state, conversation);
 
       const currentNodeId = conversation.currentNode;
@@ -169,6 +191,9 @@ export const chatSlice = createSlice({
         state.isAssistantResponding = false;
       }
     },
+    changeReplyWithSpeech: (state, action: PayloadAction<boolean>) => {
+      state.autoReplyWithSpeech = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -176,10 +201,13 @@ export const chatSlice = createSlice({
         state.chatsStatus = 'loading';
       })
       .addCase(fetchChats.fulfilled, (state, action) => {
+        const chats: Chat[] = action.payload;
+
         state.chatsStatus = 'succeeded';
-        action.payload.forEach(chat => {
-          state.chats[chat.id] = chat;
-        });
+        state.chats = chats.reduce((acc, chat) => ({
+          ...acc,
+          [chat.id]: chat
+        }), {});
       })
       .addCase(fetchChats.rejected, (state) => {
         state.chatsStatus = 'failed';
@@ -188,15 +216,27 @@ export const chatSlice = createSlice({
         state.selectedConversationStatus = 'loading';
       })
       .addCase(fetchConversationByChatId.fulfilled, (state, action) => {
+        const conversation = action.payload;
+
         state.selectedConversationStatus = 'succeeded';
-        state.selectedConversation = action.payload;
+
+        if (!state.selectedConversation || state.selectedConversation.id !== conversation.id) {
+          state.selectedConversation = conversation;
+        } else {
+          updateStateWithConversationDiff(state, conversation);
+        }
       })
       .addCase(fetchConversationByChatId.rejected, (state) => {
         state.selectedConversationStatus = 'failed';
       })
       .addCase(deleteChat.fulfilled, (state, action) => {
-        delete state.chats[action.payload];
-        state.selectedConversation = null;
+        const chatId = action.payload;
+
+        delete state.chats[chatId];
+
+        if (state.selectedConversation && state.selectedConversation.id === chatId) {
+          state.selectedConversation = null;
+        }
       })
       .addCase(deleteAllChats.fulfilled, (state) => {
         state.chats = {};
@@ -212,22 +252,31 @@ export const chatSlice = createSlice({
         const newChat = action.payload;
         state.chats[newChat.id] = newChat;
       })
-      .addCase(updateConversationMessageContent.pending , (state, action) => {
+      .addCase(updateConversationMessageContent.pending, (state, action) => {
         state.isAssistantResponding = true;
       })
       .addCase(updateConversationMessageContent.fulfilled, (state, action) => {
-        // TODO: test
-        const conversation = action.payload;
-
-        updateStateWithConversationDiff(state, conversation);
+        updateStateWithConversationDiff(state, action.payload);
       })
-      .addCase(postNewMessageToConversation.pending , (state, action) => {
+      .addCase(postNewMessageToConversation.pending, (state, action) => {
         state.isAssistantResponding = true;
       })
       .addCase(postNewMessageToConversation.fulfilled, (state, action) => {
-        const conversation = action.payload;
+        updateStateWithConversationDiff(state, action.payload);
+      })
+      .addCase(regenerateResponse.pending, (state, action) => {
+        state.isAssistantResponding = true;
+      })
+      .addCase(regenerateResponse.fulfilled, (state, action) => {
+        state.isAssistantResponding = false;
 
-        updateStateWithConversationDiff(state, conversation);
+        updateStateWithConversationDiff(state, action.payload);
+      })
+      .addCase(stopGenerating.pending, (state) => {
+        state.isAssistantResponding = true;
+      })
+      .addCase(stopGenerating.fulfilled, (state) => {
+        state.isAssistantResponding = false;
       })
   }
 });
@@ -237,6 +286,7 @@ export const selectChatsStatus = (state: RootState) => state.chat.chatsStatus;
 export const selectSelectedConversationStatus = (state: RootState) => state.chat.selectedConversationStatus;
 export const selectIsAssistantResponding = (state: RootState) => state.chat.isAssistantResponding;
 export const selectSelectedConversation = (state: RootState) => state.chat.selectedConversation;
+export const selectAutoReplyWithSpeech = (state: RootState) => state.chat.autoReplyWithSpeech;
 
 export const selectSortedChats = createSelector(
   selectChats,
@@ -246,6 +296,6 @@ export const selectSortedChats = createSelector(
   }
 );
 
-export const {resetSelectedChatStatus, addChatNodeContent} = chatSlice.actions;
+export const {resetSelectedChatStatus, addChatNodeContent, changeReplyWithSpeech} = chatSlice.actions;
 
 export default chatSlice.reducer;

@@ -5,22 +5,26 @@ import InputPanel from './InputPanel';
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
+  changeReplyWithSpeech,
   fetchConversationByChatId,
   postNewMessageToConversation,
+  regenerateResponse,
   resetSelectedChatStatus,
+  selectAutoReplyWithSpeech,
   selectIsAssistantResponding,
   selectSelectedConversation,
   selectSelectedConversationStatus,
+  stopGenerating,
   updateConversationMessageContent
 } from "../../features/chat/chatSlice";
-import { selectConnected, sseStart, sseStop } from "../../features/sse/sseSlice";
+import { sseStart, sseStop } from "../../features/sse/sseSlice";
 
 const Conversation: React.FC = () => {
   const dispatch = useAppDispatch();
   const selectedConversationStatus = useAppSelector(selectSelectedConversationStatus);
   const selectedConversation = useAppSelector(selectSelectedConversation);
   const isAssistantResponding = useAppSelector(selectIsAssistantResponding);
-  const sseConnected = useAppSelector(selectConnected);
+  const autoReplyWithSpeech = useAppSelector(selectAutoReplyWithSpeech);
 
   const {id} = useParams();
 
@@ -36,33 +40,37 @@ const Conversation: React.FC = () => {
   }
 
   const handlePreviousVersion = (prevMessageId: string) => {
-    // we need to load chat history from the prevMessageId and down to the leaf
     dispatch(fetchConversationByChatId({
       chatId: id!,
       currentNode: prevMessageId,
       upperLimit: 0,
-      lowerLimit: undefined //all you have (or can get)
+      lowerLimit: 100
     }));
   };
 
   const handleNextVersion = (nextMessageId: string) => {
-    // we need to load chat history from the nextMessageId and down to the leaf
     dispatch(fetchConversationByChatId({
       chatId: id!,
       currentNode: nextMessageId,
       upperLimit: 0,
-      lowerLimit: undefined //all you have (or can get)
+      lowerLimit: 100
     }));
   };
 
   const handleStopGenerating = () => {
-    // TODO: implement logic for stopping the generation of messages
-    // dispatch(sseStop());
+    if (id) {
+      dispatch(stopGenerating({chatId: id}));
+    }
   };
 
   const handleRegenerateResponse = () => {
-    // TODO: implement logic for regenerating the response
-    // the same as resubmitting previous user message, so we need to keep in store
+    if (id) {
+      dispatch(regenerateResponse({chatId: id}));
+    }
+  };
+
+  const handleReplyWithSpeech = (replyWithSpeech: boolean) => {
+    dispatch(changeReplyWithSpeech(replyWithSpeech));
   };
 
   useEffect(() => {
@@ -74,7 +82,7 @@ const Conversation: React.FC = () => {
       return
     }
 
-    dispatch(sseStart({ id }));
+    dispatch(sseStart({id}));
 
     return () => {
       dispatch(sseStop());
@@ -112,11 +120,13 @@ const Conversation: React.FC = () => {
         zIndex: 1,
         background: 'linear-gradient(rgba(238, 238, 238, 0), rgba(238, 238, 238, 0.8))',
       }}>
-        <InputPanel chatId={id}
+        <InputPanel key={id}
+                    replyWithSpeech={autoReplyWithSpeech}
                     isAssistantResponding={isAssistantResponding}
                     onSubmitMessage={handleSubmittedMessage}
                     onStopGenerating={handleStopGenerating}
-                    onRegenerateResponse={handleRegenerateResponse}/>
+                    onRegenerateResponse={handleRegenerateResponse}
+                    onReplyWithSpeech={handleReplyWithSpeech}/>
       </Box>
     </Box>
   );

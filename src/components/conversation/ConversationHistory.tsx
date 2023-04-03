@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { ChatNode, Conversation, Message } from "../../models";
 import ConversationMessage from "./ConversationMessage";
@@ -114,7 +114,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                                                                    onPreviousVersion,
                                                                    onNextVersion
                                                                  }) => {
-  const nodesSupplier = useMemo(() => createNodeSupplier(
+  const nodesSupplier = createNodeSupplier(
     conversation.mapping,
     (missingNodeId: string) => {
       // TODO: try to fetch the missing nodes up or down
@@ -123,7 +123,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
       return true;
     }
-  ), [conversation.mapping]);
+  );
 
   const getVersions = (message: Message) => {
     const chatNode = nodesSupplier(message.id);
@@ -170,10 +170,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     }
   };
 
-  // TODO: test
-  const messages = useMemo(
-    () => buildConversationHistory(conversation, nodesSupplier),
-    [conversation, nodesSupplier]);
+  const messages = buildConversationHistory(conversation, nodesSupplier);
 
   return (
     <Box
@@ -193,13 +190,15 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
         <Box flexGrow={1}>
           {messages.map((message) => {
             const versions = getVersions(message);
+            const messageContent = message.content.parts.join("");
 
             return (
               <ConversationMessage
-                key={message.id}
+                key={message.id + messageContent}
                 id={message.id}
                 sender={message.author}
-                text={message.content.parts.join("")}
+                text={messageContent}
+                final={message.content.final}
                 onEdit={(newText) => onEditMessage(message.id, newText)}
                 versionControl={{
                   onPreviousVersion: () => onPreviousVersion(getNextSiblingId(message.id, -1)),
@@ -212,7 +211,6 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
           })}
         </Box>
       </AutoScrollComponent>
-
     </Box>
   );
 };

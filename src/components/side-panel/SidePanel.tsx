@@ -31,8 +31,8 @@ const SidePanel: React.FC = () => {
     dispatch(deleteAllChats());
   };
 
-  const handleNewChat = async () => {
-    await dispatch(createChat());
+  const handleNewChat = () => {
+    dispatch(createChat());
   };
 
   useEffect(() => {

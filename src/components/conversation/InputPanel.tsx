@@ -14,31 +14,31 @@ import ResponseControl from './ResponseControl';
 import { transcriptAudio } from "../../app/audio";
 
 interface InputPanelProps {
-  chatId: string;
+  replyWithSpeech: boolean;
   isAssistantResponding: boolean;
   onSubmitMessage: (text: string) => void;
   onStopGenerating: () => void;
   onRegenerateResponse: () => void;
+  onReplyWithSpeech: (replyWithSpeech: boolean) => void;
 }
 
 const InputPanel: React.FC<InputPanelProps> = ({
-                                                 chatId,
+                                                 replyWithSpeech,
                                                  isAssistantResponding,
                                                  onSubmitMessage,
                                                  onStopGenerating,
-                                                 onRegenerateResponse
+                                                 onRegenerateResponse,
+                                                 onReplyWithSpeech,
                                                }) => {
   const [text, setText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [transcripting, setTranscripting] = useState(false);
-  const [replyWithSpeech, setReplyWithSpeech] = useState(true);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
-
-
   useEffect(() => {
     const mediaRecorder = mediaRecorderRef.current;
+
     return () => {
       if (mediaRecorder) {
         if (mediaRecorder?.state !== 'inactive') {
@@ -51,7 +51,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
       setTranscripting(false);
       setText('');
     }
-  }, [chatId]);
+  }, []);
 
   const handleStopGenerating = () => {
     onStopGenerating();
@@ -93,7 +93,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
 
       setTranscripting(true);
 
-      // TODO: more to slice and remove chatId prop
+      // TODO: move to slice?
       transcriptAudio(recordedBlob).then((transcription) => {
         setText(transcription.text);
         textAreaRef.current?.focus();
@@ -131,7 +131,7 @@ const InputPanel: React.FC<InputPanelProps> = ({
   };
 
   const handleReplyWithSpeechChange = () => {
-    setReplyWithSpeech(!replyWithSpeech);
+    onReplyWithSpeech(!replyWithSpeech);
   };
 
   return (

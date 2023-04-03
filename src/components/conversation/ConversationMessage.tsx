@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Avatar,
   Box,
@@ -23,16 +23,16 @@ export interface MessageProps {
   id: string;
   sender: Author;
   text: string;
+  final: boolean;
   onEdit?: (newText: string) => void;
   versionControl?: MessageVersionControlProps;
 }
 
-const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, versionControl}) => {
+const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, final, onEdit, versionControl}) => {
   const theme = useTheme();
   const isLgScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
   const [isEditing, setIsEditing] = useState(false);
-  const [originalText, setOriginalText] = useState(text);
   const [editedText, setEditedText] = useState(text);
   const [hovered, setHovered] = useState(false);
   const isUser = sender === 'USER';
@@ -46,7 +46,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   };
 
   const handleCancel = () => {
-    setEditedText(originalText);
+    setEditedText(text);
     setIsEditing(false);
   };
 
@@ -69,14 +69,8 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
   };
 
   const onEditClick = () => {
-    setOriginalText(editedText);
     setIsEditing(!isEditing);
   }
-
-  useEffect(() => {
-    setEditedText(text);
-    setOriginalText(text);
-  }, [text]);
 
   const messageContent = (
     <>
@@ -169,7 +163,7 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, onEdit, 
           {isEditing ? editContent : messageContent}
         </Box>
 
-        { hovered && (
+        { hovered && !isUser && final && (
           <Box>
             {isSpeaking ? (
               <IconButton color="error"
