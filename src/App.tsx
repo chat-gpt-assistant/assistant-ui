@@ -7,7 +7,7 @@ function App() {
   return (
     <>
       <CssBaseline/>
-      <Grid container sx={{height: '100vh'}}>
+      <Grid container sx={{height: '100vh', overflow: 'hidden'}}>
         <Grid item xs={12} sm={4} md={3} sx={{overflow: 'auto'}}>
           <SidePanel/>
         </Grid>
