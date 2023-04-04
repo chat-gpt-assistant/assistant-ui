@@ -10,14 +10,17 @@ import {
   postNewMessageToConversation,
   regenerateResponse,
   resetSelectedChatStatus,
+  responseSpeechProcessed,
   selectAutoReplyWithSpeech,
   selectIsAssistantResponding,
+  selectResponseToSpeech,
   selectSelectedConversation,
   selectSelectedConversationStatus,
   stopGenerating,
   updateConversationMessageContent
 } from "../../features/chat/chatSlice";
 import { sseStart, sseStop } from "../../features/sse/sseSlice";
+import { useSpeechSynthesis } from "../../app/hooks/useSpeechSynthesis";
 
 const Conversation: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -25,6 +28,9 @@ const Conversation: React.FC = () => {
   const selectedConversation = useAppSelector(selectSelectedConversation);
   const isAssistantResponding = useAppSelector(selectIsAssistantResponding);
   const autoReplyWithSpeech = useAppSelector(selectAutoReplyWithSpeech);
+  const responseToSpeech = useAppSelector(selectResponseToSpeech);
+
+  const { isSpeaking, speak } = useSpeechSynthesis();
 
   const {id} = useParams();
 
@@ -94,6 +100,18 @@ const Conversation: React.FC = () => {
       dispatch(fetchConversationByChatId({chatId: id, upperLimit: 100, lowerLimit: 100}));
     }
   }, [selectedConversationStatus, dispatch, id]);
+
+  useEffect(() => {
+    if (autoReplyWithSpeech && responseToSpeech) {
+      speak(responseToSpeech);
+    }
+  }, [speak, autoReplyWithSpeech, responseToSpeech]);
+
+  useEffect(() => {
+    if (!isSpeaking && responseToSpeech) {
+      dispatch(responseSpeechProcessed());
+    }
+  }, [dispatch, isSpeaking, responseToSpeech]);
 
   if (!id) {
     return null;

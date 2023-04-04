@@ -12,6 +12,7 @@ interface ChatState {
   selectedConversationStatus: LoadingStatus;
   isAssistantResponding: boolean;
   autoReplyWithSpeech: boolean;
+  responseToSpeech: string | null;
 }
 
 const initialState: ChatState = {
@@ -21,6 +22,7 @@ const initialState: ChatState = {
   selectedConversationStatus: 'idle',
   isAssistantResponding: false,
   autoReplyWithSpeech: false,
+  responseToSpeech: null,
 };
 
 /**
@@ -189,7 +191,11 @@ export const chatSlice = createSlice({
       const currentNode = conversation.mapping[currentNodeId];
       if (currentNode && currentNode.message.content.final) {
         state.isAssistantResponding = false;
+        state.responseToSpeech = currentNode.message.content.parts.join('');
       }
+    },
+    responseSpeechProcessed: (state) => {
+      state.responseToSpeech = null;
     },
     changeReplyWithSpeech: (state, action: PayloadAction<boolean>) => {
       state.autoReplyWithSpeech = action.payload;
@@ -287,6 +293,7 @@ export const selectSelectedConversationStatus = (state: RootState) => state.chat
 export const selectIsAssistantResponding = (state: RootState) => state.chat.isAssistantResponding;
 export const selectSelectedConversation = (state: RootState) => state.chat.selectedConversation;
 export const selectAutoReplyWithSpeech = (state: RootState) => state.chat.autoReplyWithSpeech;
+export const selectResponseToSpeech = (state: RootState) => state.chat.responseToSpeech;
 
 export const selectSortedChats = createSelector(
   selectChats,
@@ -296,6 +303,11 @@ export const selectSortedChats = createSelector(
   }
 );
 
-export const {resetSelectedChatStatus, addChatNodeContent, changeReplyWithSpeech} = chatSlice.actions;
+export const {
+  resetSelectedChatStatus,
+  addChatNodeContent,
+  changeReplyWithSpeech,
+  responseSpeechProcessed,
+} = chatSlice.actions;
 
 export default chatSlice.reducer;
