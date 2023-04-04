@@ -99,7 +99,6 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, final, o
             backgroundColor: 'transparent',
             border: 'none',
             outline: 'none',
-            // color: 'white'
           }}
         />
 
@@ -163,33 +162,33 @@ const ConversationMessage: React.FC<MessageProps> = ({id, sender, text, final, o
           {isEditing ? editContent : messageContent}
         </Box>
 
-        { hovered && !isUser && final && (
-          <Box>
-            {isSpeaking ? (
-              <IconButton color="error"
-                          size="small"
-                          sx={{
-
-                          }}
-                          onClick={() => stopSpeaking()}
-              >
-                <CancelIcon/>
-              </IconButton>
-            ) : (
-              <IconButton color="primary"
-                          size="small"
-                          sx={{
-
-                          }}
-                          onClick={() => speak(editedText, 'en-US')}
-              >
-                <RecordVoiceOverIcon/>
-              </IconButton>
-            )}
-          </Box>
-        )}
-
         <Box width={30} minWidth={30}>
+          { hovered && !isUser && final && (
+            <>
+              {isSpeaking ? (
+                <IconButton color="error"
+                            size="small"
+                            sx={{
+
+                            }}
+                            onClick={() => stopSpeaking()}
+                >
+                  <CancelIcon/>
+                </IconButton>
+              ) : (
+                <IconButton color="primary"
+                            size="small"
+                            sx={{
+
+                            }}
+                            onClick={() => speak(editedText, 'en-US')}
+                >
+                  <RecordVoiceOverIcon/>
+                </IconButton>
+              )}
+            </>
+          )}
+
           {(onEdit && isUser && !isEditing && hovered) && (
             <IconButton
               onClick={onEditClick}
