@@ -20,7 +20,7 @@ const initialState: ChatState = {
   selectedConversation: null,
   selectedConversationStatus: 'idle',
   isAssistantResponding: false,
-  autoReplyWithSpeech: true,
+  autoReplyWithSpeech: false,
 };
 
 /**
