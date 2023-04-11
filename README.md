@@ -39,6 +39,27 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
+## Run with Docker
+### Prerequisites
+
+- Docker: Install Docker by following the instructions on the [official Docker documentation](https://docs.docker.com/get-docker/).
+
+### Running the UI with Docker
+
+1. Build the Docker image:
+
+   ```bash
+   docker build -t assistant-ui -f ./docker/Dockerfile .
+   ```
+
+2. Run the Docker container:
+
+   ```bash
+   docker run -d -p 3000:80 --name assistant-ui assistant-ui
+   ```
+
+The front-end UI will now be available at [http://localhost:3000](http://localhost:3000).
+
 ## Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
